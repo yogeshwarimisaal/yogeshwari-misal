@@ -1,0 +1,46 @@
+{
+  "checkin": {
+    "title": "आज कोण शिफ्ट सुरू करत आहे?",
+    "subtitle": "चेक इन करण्यासाठी नावावर टॅप करा",
+    "checkedIn": "शिफ्ट सुरू",
+    "startShift": "शिफ्ट सुरू करा",
+    "endShift": "शिफ्ट संपवा",
+    "shiftStarted": "शिफ्ट सुरू झाली!",
+    "shiftEnded": "शिफ्ट संपली!",
+    "hoursWorked": "तास काम केले"
+  },
+  "pos": {
+    "newOrder": "नवी ऑर्डर",
+    "table": "टेबल",
+    "parcel": "पार्सल",
+    "bulk": "बल्क ऑर्डर",
+    "addItems": "आयटम जोडण्यासाठी टॅप करा",
+    "total": "एकूण",
+    "payCash": "रोख द्या",
+    "payOnline": "UPI / ऑनलाइन द्या",
+    "cancelOrder": "ऑर्डर रद्द करा",
+    "orderComplete": "ऑर्डर पूर्ण!",
+    "newOrderBtn": "नवी ऑर्डर"
+  },
+  "menu": {
+    "wadaPav": "वडा पाव",
+    "katWadaSingle": "कट वडा (Single)",
+    "katWadaDouble": "कट वडा (Double)",
+    "misalPav": "मिसळ पाव",
+    "pavBhaji": "पाव भाजी",
+    "tawaPulav": "तवा पुलाव",
+    "alooParatha": "आलू पराठा",
+    "thalipeeth": "थालीपीठ"
+  },
+  "common": {
+    "appName": "Yogeshwari Misal",
+    "appNameMr": "योगेश्वरी मिसळ",
+    "admin": "अॅडमिन",
+    "staff": "स्टाफ",
+    "loading": "लोड होत आहे...",
+    "error": "काहीतरी चुकले",
+    "save": "सेव्ह करा",
+    "cancel": "रद्द करा",
+    "close": "बंद करा"
+  }
+}

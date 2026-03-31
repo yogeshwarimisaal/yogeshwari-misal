@@ -1,0 +1,46 @@
+{
+  "checkin": {
+    "title": "Who is starting their shift?",
+    "subtitle": "Tap your name to check in",
+    "checkedIn": "On shift since",
+    "startShift": "Start Shift",
+    "endShift": "End Shift",
+    "shiftStarted": "Shift started!",
+    "shiftEnded": "Shift ended!",
+    "hoursWorked": "hrs worked"
+  },
+  "pos": {
+    "newOrder": "New Order",
+    "table": "Table",
+    "parcel": "Parcel",
+    "bulk": "Bulk Order",
+    "addItems": "Tap items to add",
+    "total": "Total",
+    "payCash": "Pay Cash",
+    "payOnline": "Pay UPI / Online",
+    "cancelOrder": "Cancel Order",
+    "orderComplete": "Order Complete!",
+    "newOrderBtn": "New Order"
+  },
+  "menu": {
+    "wadaPav": "Wada Pav",
+    "katWadaSingle": "Kat Wada Single",
+    "katWadaDouble": "Kat Wada Double",
+    "misalPav": "Misal Pav",
+    "pavBhaji": "Pav Bhaji",
+    "tawaPulav": "Tawa Pulav",
+    "alooParatha": "Aloo Paratha",
+    "thalipeeth": "Thalipeeth"
+  },
+  "common": {
+    "appName": "Yogeshwari Misal",
+    "appNameMr": "योगेश्वरी मिसळ",
+    "admin": "Admin",
+    "staff": "Staff",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close"
+  }
+}
