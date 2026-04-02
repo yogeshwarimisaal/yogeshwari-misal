@@ -28,15 +28,12 @@ export default function StaffCheckin() {
   async function loadStaffAndShifts() {
     setLoading(true)
 
-   const { data: users, error: userError } = await supabase
-  .from('users')
-  .select('*')
-  .eq('role', 'staff')
-  .eq('is_active', true)
-  .order('name')
-
-console.log('Users from DB:', users)
-console.log('Error:', userError)
+    const { data: users } = await supabase
+      .from('users')
+      .select('*')
+      .eq('role', 'staff')
+      .eq('is_active', true)
+      .order('name')
 
     const today = new Date().toISOString().split('T')[0]
     const { data: shifts } = await supabase
@@ -204,7 +201,12 @@ console.log('Error:', userError)
         <span style={styles.footerText}>
           {Object.keys(activeShifts).length} / {staff.length} on shift today
         </span>
-        <a href="/admin" style={styles.adminLink}>Admin</a>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <a href="/pos" style={{ ...styles.adminLink, color: '#1D9E75' }}>
+            POS Screen
+          </a>
+          <a href="/admin" style={styles.adminLink}>Admin</a>
+        </div>
       </div>
     </div>
   )
