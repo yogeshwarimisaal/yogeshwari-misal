@@ -12,15 +12,8 @@ import { formatCurrency, formatTime, formatShiftDuration, getTodayDate } from '.
 export default function AdminDashboard() {
   const [unlocked, setUnlocked] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
-
   if (!unlocked) return <PinPad onUnlock={() => setUnlocked(true)} />
-
-  return (
-    <AdminPanel
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />
-  )
+  return <AdminPanel activeTab={activeTab} setActiveTab={setActiveTab} />
 }
 
 function AdminPanel({ activeTab, setActiveTab }) {
@@ -34,15 +27,16 @@ function AdminPanel({ activeTab, setActiveTab }) {
     addExpense, updateInventoryItem, addInventoryItem,
   } = useAdmin()
 
-  const { menu } = useMenu()
+  const { menu } = useMenu(true)
 
   const tabs = [
-    { id: 'dashboard', label: t('आज', 'Today') },
-    { id: 'expenses', label: t('खर्च', 'Expenses') },
-    { id: 'inventory', label: t('साठा', 'Inventory') },
-    { id: 'shifts', label: t('शिफ्ट', 'Shifts') },
-    { id: 'menu', label: t('मेनू', 'Menu') },
-    { id: 'bulk', label: t('बल्क', 'Bulk') },
+    { id: 'dashboard',   label: t('आज',       'Today')    },
+    { id: 'expenses',    label: t('खर्च',      'Expenses') },
+    { id: 'inventory',   label: t('साठा',      'Inventory')},
+    { id: 'shifts',      label: t('शिफ्ट',     'Shifts')   },
+    { id: 'reports',     label: t('अहवाल',     'Reports')  },
+    { id: 'menumanager', label: t('मेनू',      'Menu')     },
+    { id: 'bulk',        label: t('बल्क',      'Bulk')     },
   ]
 
   return (
@@ -51,9 +45,7 @@ function AdminPanel({ activeTab, setActiveTab }) {
       <Header
         subtitle={t('अॅडमिन पॅनल', 'Admin Panel')}
         rightContent={
-          <a href="/" style={styles.homeBtn}>
-            {t('होम', 'Home')}
-          </a>
+          <a href="/" style={styles.homeBtn}>{t('होम', 'Home')}</a>
         }
       />
 
@@ -87,44 +79,66 @@ function AdminPanel({ activeTab, setActiveTab }) {
               <DashboardTab
                 stats={todayStats}
                 todayExpenses={todayExpenses}
-                lang={lang} t={t}
+                lang={lang}
+                t={t}
               />
             )}
+
             {activeTab === 'expenses' && (
               <ExpensesTab
                 expenses={expenses}
                 onAdd={addExpense}
-                lang={lang} t={t}
+                lang={lang}
+                t={t}
               />
             )}
+
             {activeTab === 'inventory' && (
               <InventoryTab
                 inventory={inventory}
                 onUpdate={updateInventoryItem}
                 onAdd={addInventoryItem}
-                lang={lang} t={t}
+                lang={lang}
+                t={t}
               />
             )}
+
             {activeTab === 'shifts' && (
               <ShiftsTab shifts={shifts} lang={lang} t={t} />
             )}
-            {activeTab === 'menu' && (
-              <MenuTab menu={menu} lang={lang} t={t} />
+
+            {activeTab === 'reports' && (
+              <div style={styles.linkTabContent}>
+                <div style={styles.linkTabDesc}>
+                  {t('दैनिक, साप्ताहिक आणि मासिक व्यवसाय अहवाल पाहा', 'View daily, weekly and monthly business reports')}
+                </div>
+                <a href="/reports" style={styles.linkBtn}>
+                  {t('अहवाल उघडा', 'Open Reports')}
+                </a>
+              </div>
             )}
+
+            {activeTab === 'menumanager' && (
+              <div style={styles.linkTabContent}>
+                <div style={styles.linkTabDesc}>
+                  {t('मेनू आयटम जोडा, बदला किंवा बंद करा', 'Add, edit or disable menu items')}
+                </div>
+                <a href="/menu-manager" style={styles.linkBtn}>
+                  {t('मेनू व्यवस्थापन उघडा', 'Open Menu Manager')}
+                </a>
+              </div>
+            )}
+
             {activeTab === 'bulk' && (
-  <div style={{ textAlign: 'center', padding: '30px 0' }}>
-    <div style={{ fontSize: 14, color: '#888', marginBottom: 16 }}>
-      {t('बल्क ऑर्डर व्यवस्थापित करा', 'Manage bulk orders')}
-    </div>
-    <a href="/bulk" style={{
-      background: '#D85A30', color: '#fff',
-      padding: '12px 28px', borderRadius: 12,
-      textDecoration: 'none', fontSize: 15, fontWeight: 600,
-    }}>
-      {t('बल्क ऑर्डर उघडा', 'Open Bulk Orders')}
-    </a>
-  </div>
-)}
+              <div style={styles.linkTabContent}>
+                <div style={styles.linkTabDesc}>
+                  {t('बल्क आणि स्पेशल ऑर्डर व्यवस्थापित करा', 'Manage bulk and special orders')}
+                </div>
+                <a href="/bulk" style={styles.linkBtn}>
+                  {t('बल्क ऑर्डर उघडा', 'Open Bulk Orders')}
+                </a>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -132,7 +146,7 @@ function AdminPanel({ activeTab, setActiveTab }) {
   )
 }
 
-function DashboardTab({ stats, todayExpenses, lang, t }) {
+function DashboardTab({ stats, todayExpenses, t }) {
   const profit = stats.revenue - todayExpenses
   return (
     <div>
@@ -154,9 +168,7 @@ function DashboardTab({ stats, todayExpenses, lang, t }) {
         <StatCard
           label={t('नफा / तोटा', 'Profit / Loss')}
           value={formatCurrency(profit)}
-          sub={profit >= 0
-            ? t('नफा', 'Profit')
-            : t('तोटा', 'Loss')}
+          sub={profit >= 0 ? t('नफा', 'Profit') : t('तोटा', 'Loss')}
           accent={profit >= 0 ? COLORS.teal : '#E24B4A'}
         />
         <StatCard
@@ -205,7 +217,9 @@ function ExpensesTab({ expenses, onAdd, lang, t }) {
 
   return (
     <div>
-      <div style={styles.sectionTitle}>{t('नवा खर्च जोडा', 'Add Expense')}</div>
+      <div style={styles.sectionTitle}>
+        {t('नवा खर्च जोडा', 'Add Expense')}
+      </div>
       <div style={styles.formCard}>
         <select
           value={form.category}
@@ -249,9 +263,13 @@ function ExpensesTab({ expenses, onAdd, lang, t }) {
         </button>
       </div>
 
-      <div style={styles.sectionTitle}>{t('अलीकडील खर्च', 'Recent Expenses')}</div>
+      <div style={styles.sectionTitle}>
+        {t('अलीकडील खर्च', 'Recent Expenses')}
+      </div>
       {expenses.length === 0 ? (
-        <div style={styles.empty}>{t('कोणताही खर्च नाही', 'No expenses yet')}</div>
+        <div style={styles.empty}>
+          {t('कोणताही खर्च नाही', 'No expenses yet')}
+        </div>
       ) : (
         expenses.map(exp => (
           <div key={exp.id} style={styles.expenseRow}>
@@ -275,12 +293,18 @@ function ExpensesTab({ expenses, onAdd, lang, t }) {
 }
 
 function InventoryTab({ inventory, onUpdate, onAdd, lang, t }) {
-  const [newItem, setNewItem] = useState({ item_name: '', unit: 'kg', current_stock: '', min_stock_level: '' })
   const [editingId, setEditingId] = useState(null)
   const [editStock, setEditStock] = useState('')
+  const [newItem, setNewItem] = useState({
+    item_name: '', unit: 'kg',
+    current_stock: '', min_stock_level: '',
+  })
 
   async function handleUpdateStock(id) {
-    await onUpdate(id, { current_stock: parseFloat(editStock), last_updated: new Date().toISOString() })
+    await onUpdate(id, {
+      current_stock: parseFloat(editStock),
+      last_updated: new Date().toISOString(),
+    })
     setEditingId(null)
     setEditStock('')
   }
@@ -297,9 +321,13 @@ function InventoryTab({ inventory, onUpdate, onAdd, lang, t }) {
 
   return (
     <div>
-      <div style={styles.sectionTitle}>{t('साठा स्थिती', 'Stock Status')}</div>
+      <div style={styles.sectionTitle}>
+        {t('साठा स्थिती', 'Stock Status')}
+      </div>
       {inventory.length === 0 ? (
-        <div style={styles.empty}>{t('कोणताही साठा नाही', 'No inventory items yet')}</div>
+        <div style={styles.empty}>
+          {t('कोणताही साठा नाही', 'No inventory items yet')}
+        </div>
       ) : (
         inventory.map(item => {
           const isLow = item.current_stock <= item.min_stock_level
@@ -322,12 +350,18 @@ function InventoryTab({ inventory, onUpdate, onAdd, lang, t }) {
                     value={editStock}
                     onChange={e => setEditStock(e.target.value)}
                     style={{ ...styles.input, width: 80, margin: 0 }}
-                    placeholder="New qty"
+                    placeholder="Qty"
                   />
-                  <button onClick={() => handleUpdateStock(item.id)} style={styles.smallBtn}>
+                  <button
+                    onClick={() => handleUpdateStock(item.id)}
+                    style={styles.smallBtn}
+                  >
                     {t('सेव्ह', 'Save')}
                   </button>
-                  <button onClick={() => setEditingId(null)} style={styles.smallBtnGray}>
+                  <button
+                    onClick={() => setEditingId(null)}
+                    style={styles.smallBtnGray}
+                  >
                     {t('रद्द', 'Cancel')}
                   </button>
                 </div>
@@ -344,7 +378,9 @@ function InventoryTab({ inventory, onUpdate, onAdd, lang, t }) {
         })
       )}
 
-      <div style={styles.sectionTitle}>{t('नवीन वस्तू जोडा', 'Add New Item')}</div>
+      <div style={styles.sectionTitle}>
+        {t('नवीन वस्तू जोडा', 'Add New Item')}
+      </div>
       <div style={styles.formCard}>
         <input
           type="text"
@@ -425,139 +461,38 @@ function ShiftsTab({ shifts, lang, t }) {
   )
 }
 
-function MenuTab({ menu, lang, t }) {
-  return (
-    <div>
-      <div style={styles.sectionTitle}>
-        {t('मेनू यादी', 'Menu Items')}
-      </div>
-      {menu.map(item => (
-        <div key={item.id} style={styles.menuRow}>
-          <div style={{ flex: 1 }}>
-            <div style={styles.menuItemName}>
-              {lang === 'mr' ? item.name_mr : item.name_en}
-            </div>
-            <div style={styles.menuItemSub}>
-              {item.name_en} · {item.is_bulk
-                ? t('बल्क', 'Bulk')
-                : t('नियमित', 'Regular')}
-            </div>
-          </div>
-          <div style={{
-            ...styles.menuPrice,
-            background: item.is_active ? COLORS.tealLight : '#f0f0f0',
-            color: item.is_active ? COLORS.tealDark : '#aaa',
-          }}>
-            {formatCurrency(item.price)}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 const styles = {
-  container: { minHeight: '100vh', background: COLORS.bg, fontFamily: 'sans-serif' },
-  centered: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, color: '#888' },
-  homeBtn: {
-    background: 'rgba(255,255,255,0.2)', padding: '5px 12px',
-    borderRadius: 20, color: '#fff', textDecoration: 'none', fontSize: 12,
-  },
-  tabBar: {
-    display: 'flex', background: '#fff',
-    borderBottom: '1px solid #eee', overflowX: 'auto',
-  },
-  tab: {
-    padding: '12px 16px', border: 'none', background: 'none',
-    cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap',
-    transition: 'all 0.15s',
-  },
-  content: { padding: 14 },
-  sectionTitle: {
-    fontSize: 13, fontWeight: 700, color: '#444',
-    marginBottom: 10, marginTop: 16,
-    textTransform: 'uppercase', letterSpacing: '0.05em',
-  },
-  statsGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: 10, marginBottom: 14,
-  },
-  topDishCard: {
-    background: COLORS.primaryLight,
-    borderRadius: 12, padding: '14px 16px',
-    border: `1px solid ${COLORS.primary}20`,
-  },
-  topDishLabel: { fontSize: 11, color: COLORS.primaryDark, fontWeight: 600, marginBottom: 4 },
-  topDishName: { fontSize: 20, fontWeight: 700, color: COLORS.primary },
-  topDishCount: { fontSize: 12, color: COLORS.primaryDark, marginTop: 2 },
-  formCard: {
-    background: '#fff', borderRadius: 12,
-    padding: 14, marginBottom: 16,
-    border: '1px solid #eee',
-  },
-  input: {
-    width: '100%', padding: '10px 12px', borderRadius: 10,
-    border: '1px solid #ddd', fontSize: 14,
-    marginBottom: 10, boxSizing: 'border-box',
-  },
-  submitBtn: {
-    width: '100%', background: COLORS.primary, color: '#fff',
-    border: 'none', padding: 12, borderRadius: 10,
-    fontSize: 14, fontWeight: 600, cursor: 'pointer',
-  },
-  expenseRow: {
-    display: 'flex', alignItems: 'center',
-    padding: '10px 12px', background: '#fff',
-    borderRadius: 10, marginBottom: 8,
-    border: '1px solid #eee',
-  },
-  expenseCat: { fontSize: 13, fontWeight: 600, color: '#1a1a1a' },
-  expenseDesc: { fontSize: 12, color: '#888', marginTop: 2 },
-  expenseDate: { fontSize: 11, color: '#aaa', marginTop: 2 },
+  container:     { minHeight: '100vh', background: COLORS.bg, fontFamily: 'sans-serif' },
+  centered:      { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, color: '#888' },
+  homeBtn:       { background: 'rgba(255,255,255,0.2)', padding: '5px 12px', borderRadius: 20, color: '#fff', textDecoration: 'none', fontSize: 12 },
+  tabBar:        { display: 'flex', background: '#fff', borderBottom: '1px solid #eee', overflowX: 'auto' },
+  tab:           { padding: '12px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap', transition: 'all 0.15s' },
+  content:       { padding: 14 },
+  sectionTitle:  { fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8, marginTop: 16, textTransform: 'uppercase', letterSpacing: '0.05em' },
+  statsGrid:     { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 4 },
+  topDishCard:   { background: COLORS.primaryLight, borderRadius: 12, padding: '14px 16px', border: `1px solid ${COLORS.primary}20`, marginTop: 12 },
+  topDishLabel:  { fontSize: 11, color: COLORS.primaryDark, fontWeight: 600, marginBottom: 4 },
+  topDishName:   { fontSize: 20, fontWeight: 700, color: COLORS.primary },
+  topDishCount:  { fontSize: 12, color: COLORS.primaryDark, marginTop: 2 },
+  formCard:      { background: '#fff', borderRadius: 12, padding: 14, marginBottom: 16, border: '1px solid #eee' },
+  input:         { width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #ddd', fontSize: 14, marginBottom: 10, boxSizing: 'border-box' },
+  submitBtn:     { width: '100%', background: COLORS.primary, color: '#fff', border: 'none', padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' },
+  expenseRow:    { display: 'flex', alignItems: 'center', padding: '10px 12px', background: '#fff', borderRadius: 10, marginBottom: 8, border: '1px solid #eee' },
+  expenseCat:    { fontSize: 13, fontWeight: 600, color: '#1a1a1a' },
+  expenseDesc:   { fontSize: 12, color: '#888', marginTop: 2 },
+  expenseDate:   { fontSize: 11, color: '#aaa', marginTop: 2 },
   expenseAmount: { fontSize: 15, fontWeight: 700, color: COLORS.primary },
-  inventoryRow: {
-    display: 'flex', alignItems: 'center',
-    padding: '10px 12px', background: '#fff',
-    borderRadius: 10, marginBottom: 8,
-    border: '1px solid #eee',
-  },
+  inventoryRow:  { display: 'flex', alignItems: 'center', padding: '10px 12px', background: '#fff', borderRadius: 10, marginBottom: 8, border: '1px solid #eee' },
   inventoryName: { fontSize: 13, fontWeight: 600, marginBottom: 2 },
-  shiftRow: {
-    display: 'flex', alignItems: 'center', gap: 12,
-    padding: '10px 12px', background: '#fff',
-    borderRadius: 10, marginBottom: 8,
-    border: '1px solid #eee',
-  },
-  shiftAvatar: {
-    width: 40, height: 40, borderRadius: '50%',
-    background: COLORS.primaryLight, color: COLORS.primary,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 13, fontWeight: 700,
-  },
-  shiftName: { fontSize: 13, fontWeight: 600 },
-  shiftTime: { fontSize: 12, color: '#888', marginTop: 2 },
+  shiftRow:      { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#fff', borderRadius: 10, marginBottom: 8, border: '1px solid #eee' },
+  shiftAvatar:   { width: 40, height: 40, borderRadius: '50%', background: COLORS.primaryLight, color: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 },
+  shiftName:     { fontSize: 13, fontWeight: 600 },
+  shiftTime:     { fontSize: 12, color: '#888', marginTop: 2 },
   shiftDuration: { fontSize: 13, fontWeight: 700 },
-  menuRow: {
-    display: 'flex', alignItems: 'center',
-    padding: '10px 12px', background: '#fff',
-    borderRadius: 10, marginBottom: 8,
-    border: '1px solid #eee',
-  },
-  menuItemName: { fontSize: 13, fontWeight: 600 },
-  menuItemSub: { fontSize: 11, color: '#aaa', marginTop: 2 },
-  menuPrice: {
-    padding: '4px 10px', borderRadius: 20,
-    fontSize: 13, fontWeight: 600,
-  },
-  empty: { textAlign: 'center', color: '#aaa', fontSize: 13, padding: '24px 0' },
-  smallBtn: {
-    background: COLORS.teal, color: '#fff',
-    border: 'none', padding: '6px 12px',
-    borderRadius: 8, fontSize: 12, cursor: 'pointer',
-  },
-  smallBtnGray: {
-    background: '#f0f0f0', color: '#555',
-    border: 'none', padding: '6px 12px',
-    borderRadius: 8, fontSize: 12, cursor: 'pointer',
-  },
+  smallBtn:      { background: COLORS.teal, color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer' },
+  smallBtnGray:  { background: '#f0f0f0', color: '#555', border: 'none', padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer' },
+  empty:         { textAlign: 'center', color: '#aaa', fontSize: 13, padding: '24px 0' },
+  linkTabContent:{ textAlign: 'center', padding: '40px 20px' },
+  linkTabDesc:   { fontSize: 14, color: '#888', marginBottom: 20 },
+  linkBtn:       { background: COLORS.primary, color: '#fff', padding: '12px 32px', borderRadius: 12, textDecoration: 'none', fontSize: 15, fontWeight: 600 },
 }
