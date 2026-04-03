@@ -215,7 +215,12 @@ const styles = {
     background: '#f0f0f0', border: 'none', borderRadius: 10,
     padding: '3px 8px', fontSize: 11, cursor: 'pointer', color: '#555',
   },
-  body: { display: 'grid', gridTemplateColumns: '1fr 300px', gap: 12, padding: 12 },
+  body: {
+  display: 'grid',
+  gridTemplateColumns: window.innerWidth < 600 ? '1fr' : '1fr 300px',
+  gap: 12,
+  padding: 12
+        },
   menuSection: { background: '#fff', borderRadius: 14, padding: 14 },
   sectionLabel: { fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 10, letterSpacing: '0.04em' },
   adminBar: { padding: '12px 16px', textAlign: 'right' },

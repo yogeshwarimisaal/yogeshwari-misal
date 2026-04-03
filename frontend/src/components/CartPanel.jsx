@@ -64,7 +64,9 @@ function ViewMode({ order, lang, t, onComplete, onCancel }) {
       <button onClick={() => onComplete('online')} style={styles.onlineBtn}>
         {t('UPI / ऑनलाइन', 'Pay UPI / Online')}
       </button>
-      <button onClick={onCancel} style={styles.cancelBtn}>
+      <button onClick={() => {
+       if (window.confirm('ऑर्डर रद्द करायची? / Cancel this order?')) onCancel()
+      }} style={styles.cancelBtn}>
         {t('ऑर्डर रद्द करा', 'Cancel Order')}
       </button>
     </div>
