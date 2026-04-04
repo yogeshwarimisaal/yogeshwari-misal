@@ -55,7 +55,7 @@ export default function AdminReports() {
     <div style={styles.container}>
       <Toaster position="top-center" />
       <Header
-        subtitle={t('व्यवसाय अहवाल', 'Business Reports')}
+        subtitle={t('व्यावसायिक रिपोर्ट', 'Business Reports')}
         rightContent={
           <a href="/admin" style={styles.backBtn}>{t('अॅडमिन', 'Admin')}</a>
         }
@@ -235,7 +235,7 @@ export default function AdminReports() {
             {report.staffPerformance.length > 0 && (
               <>
                 <div style={styles.sectionTitle}>
-                  {t('स्टाफ कामगिरी', 'Staff Performance')}
+                  {t('आपली कामगिरी', 'Staff Performance')}
                 </div>
                 <div style={styles.card}>
                   {report.staffPerformance

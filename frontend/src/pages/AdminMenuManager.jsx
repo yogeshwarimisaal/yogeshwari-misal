@@ -67,7 +67,7 @@ export default function AdminMenuManager() {
       <Header
         subtitle={t('मेनू व्यवस्थापन', 'Menu Manager')}
         rightContent={
-          <a href="/admin" style={styles.backBtn}>{t('अॅडमिन', 'Admin')}</a>
+          <a href="/admin" style={styles.backBtn}>{t('ऍडमीन', 'Admin')}</a>
         }
       />
 
@@ -75,7 +75,7 @@ export default function AdminMenuManager() {
         {(showAdd || editingItem) ? (
           <div style={styles.formCard}>
             <div style={styles.sectionTitle}>
-              {editingItem ? t('आयटम बदला', 'Edit Item') : t('नवीन आयटम', 'New Item')}
+              {editingItem ? t('डिश बदला', 'Edit Item') : t('नवीन डिश', 'New Item')}
             </div>
             <input style={styles.input} placeholder="Name in English *"
               value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} />
@@ -86,7 +86,7 @@ export default function AdminMenuManager() {
               onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
             <select style={styles.input} value={form.category}
               onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-              <option value="regular">{t('नियमित', 'Regular')}</option>
+              <option value="regular">{t('रेग्युलर', 'Regular')}</option>
               <option value="bulk">{t('बल्क', 'Bulk')}</option>
               <option value="special">{t('स्पेशल', 'Special')}</option>
             </select>
@@ -94,7 +94,7 @@ export default function AdminMenuManager() {
               <input type="checkbox" checked={form.is_bulk}
                 onChange={e => setForm(f => ({ ...f, is_bulk: e.target.checked }))} />
               <span style={{ fontSize: 14, marginLeft: 8 }}>
-                {t('बल्क ऑर्डर आयटम', 'Bulk order item')}
+                {t('बल्क ऑर्डर डिश', 'Bulk order item')}
               </span>
             </label>
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
@@ -103,23 +103,23 @@ export default function AdminMenuManager() {
                 {saving ? t('सेव्ह...', 'Saving...') : t('सेव्ह करा', 'Save')}
               </button>
               <button onClick={resetForm} style={{ ...styles.cancelBtn, flex: 1 }}>
-                {t('रद्द करा', 'Cancel')}
+                {t('कॅन्सल करा', 'Cancel')}
               </button>
             </div>
           </div>
         ) : (
           <button onClick={() => setShowAdd(true)} style={styles.addBtn}>
-            + {t('नवीन आयटम जोडा', 'Add New Item')}
+            + {t('नवीन डिश ऍड करा', 'Add New Item')}
           </button>
         )}
 
-        <div style={styles.sectionTitle}>{t('नियमित मेनू', 'Regular Menu')} ({regularItems.length})</div>
+        <div style={styles.sectionTitle}>{t('रेग्युलर मेनू', 'Regular Menu')} ({regularItems.length})</div>
         {regularItems.map(item => (
           <MenuItemRow key={item.id} item={item} lang={lang} t={t}
             onEdit={startEdit} onToggle={toggleMenuItem} />
         ))}
 
-        <div style={styles.sectionTitle}>{t('बल्क आयटम', 'Bulk Items')} ({bulkItems.length})</div>
+        <div style={styles.sectionTitle}>{t('बल्क डिश', 'Bulk Items')} ({bulkItems.length})</div>
         {bulkItems.map(item => (
           <MenuItemRow key={item.id} item={item} lang={lang} t={t}
             onEdit={startEdit} onToggle={toggleMenuItem} />

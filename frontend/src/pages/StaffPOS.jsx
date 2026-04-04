@@ -63,8 +63,8 @@ export default function StaffPOS() {
   }
 
   async function handleCreate() {
-    if (cart.length === 0) { toast.error(t('आयटम जोडा', 'Add items first')); return }
-    if (orderType === 'table' && !tableNumber) { toast.error(t('टेबल नंबर टाका', 'Enter table number')); return }
+    if (cart.length === 0) { toast.error(t('आयटम ऍड करा', 'Add items first')); return }
+    if (orderType === 'table' && !tableNumber) { toast.error(t('टेबल नंबर काय आहे?', 'Enter table number')); return }
     const order = await createOrder(cart, orderType, tableNumber)
     if (order) { resetForm(); setActiveOrderId(order.id) }
   }
@@ -131,7 +131,7 @@ export default function StaffPOS() {
 
         <div style={styles.orderStrip}>
           <button onClick={resetForm} style={styles.newOrderBtn}>
-            + {t('नवी ऑर्डर', 'New Order')}
+            + {t('नवीन ऑर्डर', 'New Order')}
           </button>
           {orders.map(order => (
             <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -176,7 +176,7 @@ export default function StaffPOS() {
 
       <div style={styles.adminBar}>
         <a href="/admin" style={styles.adminLink}>
-          {t('अॅडमिन पॅनल', 'Admin Panel')}
+          {t('ऍडमीन पॅनल', 'Admin Panel')}
         </a>
       </div>
     </div>

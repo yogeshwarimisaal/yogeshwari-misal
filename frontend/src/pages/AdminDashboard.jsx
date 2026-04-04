@@ -32,9 +32,9 @@ function AdminPanel({ activeTab, setActiveTab }) {
   const tabs = [
     { id: 'dashboard',   label: t('आज',       'Today')    },
     { id: 'expenses',    label: t('खर्च',      'Expenses') },
-    { id: 'inventory',   label: t('साठा',      'Inventory')},
+    { id: 'inventory',   label: t('इन्व्हेंटरी',      'Inventory')},
     { id: 'shifts',      label: t('शिफ्ट',     'Shifts')   },
-    { id: 'reports',     label: t('अहवाल',     'Reports')  },
+    { id: 'reports',     label: t('रिपोर्ट्स',     'Reports')  },
     { id: 'menumanager', label: t('मेनू',      'Menu')     },
     { id: 'bulk',        label: t('बल्क',      'Bulk')     },
   ]
@@ -71,7 +71,7 @@ function AdminPanel({ activeTab, setActiveTab }) {
       <div style={styles.content}>
         {loading ? (
           <div style={styles.centered}>
-            {t('लोड होत आहे...', 'Loading...')}
+            {t('हॉटेल उघडत आहे...', 'Loading...')}
           </div>
         ) : (
           <>
@@ -110,10 +110,10 @@ function AdminPanel({ activeTab, setActiveTab }) {
             {activeTab === 'reports' && (
               <div style={styles.linkTabContent}>
                 <div style={styles.linkTabDesc}>
-                  {t('दैनिक, साप्ताहिक आणि मासिक व्यवसाय अहवाल पाहा', 'View daily, weekly and monthly business reports')}
+                  {t('दैनिक, साप्ताहिक आणि मासिक व्यावसायिक रिपोर्ट पाहा', 'View daily, weekly and monthly business reports')}
                 </div>
                 <a href="/reports" style={styles.linkBtn}>
-                  {t('अहवाल उघडा', 'Open Reports')}
+                  {t('रिपोर्ट उघडा', 'Open Reports')}
                 </a>
               </div>
             )}
@@ -121,7 +121,7 @@ function AdminPanel({ activeTab, setActiveTab }) {
             {activeTab === 'menumanager' && (
               <div style={styles.linkTabContent}>
                 <div style={styles.linkTabDesc}>
-                  {t('मेनू आयटम जोडा, बदला किंवा बंद करा', 'Add, edit or disable menu items')}
+                  {t('मेनूमध्ये डिश ऍड करा, बदला किंवा बंद करा', 'Add, edit or disable menu items')}
                 </div>
                 <a href="/menu-manager" style={styles.linkBtn}>
                   {t('मेनू व्यवस्थापन उघडा', 'Open Menu Manager')}
@@ -155,7 +155,7 @@ function DashboardTab({ stats, todayExpenses, t }) {
       </div>
       <div style={styles.statsGrid}>
         <StatCard
-          label={t('एकूण महसूल', 'Total Revenue')}
+          label={t('एकूण रेव्हेन्यू', 'Total Revenue')}
           value={formatCurrency(stats.revenue)}
           sub={`${stats.orders} ${t('ऑर्डर', 'orders')}`}
           accent={COLORS.teal}
@@ -322,11 +322,11 @@ function InventoryTab({ inventory, onUpdate, onAdd, lang, t }) {
   return (
     <div>
       <div style={styles.sectionTitle}>
-        {t('साठा स्थिती', 'Stock Status')}
+        {t('इन्व्हेंटरीची परिस्थिती', 'Stock Status')}
       </div>
       {inventory.length === 0 ? (
         <div style={styles.empty}>
-          {t('कोणताही साठा नाही', 'No inventory items yet')}
+          {t('काहीच शिल्लक नाही', 'No inventory items yet')}
         </div>
       ) : (
         inventory.map(item => {
@@ -340,7 +340,7 @@ function InventoryTab({ inventory, onUpdate, onAdd, lang, t }) {
                 <div style={styles.inventoryName}>{item.item_name}</div>
                 <div style={{ fontSize: 12, color: isLow ? '#E24B4A' : '#888' }}>
                   {item.current_stock} {item.unit}
-                  {isLow && ` — ${t('कमी साठा!', 'Low Stock!')}`}
+                  {isLow && ` — ${t('रॉ-मटेरियल कमी आहे!!!', 'Low Stock!')}`}
                 </div>
               </div>
               {editingId === item.id ? (
@@ -400,7 +400,7 @@ function InventoryTab({ inventory, onUpdate, onAdd, lang, t }) {
         </select>
         <input
           type="number"
-          placeholder={t('सध्याचा साठा', 'Current stock')}
+          placeholder={t('सध्याची इन्व्हेंटरीची परिस्थिती', 'Current stock')}
           value={newItem.current_stock}
           onChange={e => setNewItem(n => ({ ...n, current_stock: e.target.value }))}
           style={styles.input}
