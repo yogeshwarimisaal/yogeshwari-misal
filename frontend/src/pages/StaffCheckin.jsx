@@ -33,7 +33,7 @@ export default function StaffCheckin() {
       .select('*')
       .eq('role', 'staff')
       .eq('is_active', true)
-      .order('name')
+      .order('sort_order', { ascending: true })
 
     const today = new Date().toISOString().split('T')[0]
     const { data: shifts } = await supabase
