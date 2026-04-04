@@ -98,13 +98,15 @@ export default function StaffPOS() {
       <Toaster position="top-center" />
 
       <Header
-        subtitle={t('ऑर्डर स्क्रीन', 'Order Screen')}
-        rightContent={
-          <a href="/" style={styles.homeBtn}>
-            {t('होम', 'Home')}
-          </a>
-        }
-      />
+  subtitle={t('ऑर्डर स्क्रीन', 'Order Screen')}
+  rightContent={
+    <div style={{ display: 'flex', gap: 8 }}>
+      <a href="/" style={styles.endShiftBtn}>
+        {t('शिफ्ट संपवा', 'End Shift')}
+      </a>
+    </div>
+  }
+/>
 
       <div style={styles.topBar}>
         <div style={styles.typeRow}>
@@ -215,6 +217,13 @@ const styles = {
     background: '#f0f0f0', border: 'none', borderRadius: 10,
     padding: '3px 8px', fontSize: 11, cursor: 'pointer', color: '#555',
   },
+  endShiftBtn: {
+  background: 'rgba(255,255,255,0.25)',
+  border: '1.5px solid rgba(255,255,255,0.6)',
+  padding: '6px 14px', borderRadius: 20,
+  color: '#fff', textDecoration: 'none',
+  fontSize: 12, fontWeight: 600,
+},
   body: {
   display: 'flex',
   flexDirection: window.innerWidth < 640 ? 'column' : 'row',

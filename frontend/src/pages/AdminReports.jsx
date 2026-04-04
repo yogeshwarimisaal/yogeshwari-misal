@@ -6,6 +6,7 @@ import StatCard from '../components/StatCard'
 import { useReports } from '../hooks/useReports'
 import { COLORS, EXPENSE_LABELS } from '../utils/constants'
 import { formatCurrency, getTodayDate, getWeekRange, getMonthRange } from '../utils/formatters'
+import { generateBusinessReport } from '../utils/generatePDF'
 
 const PERIODS = [
   { id: 'today',   labelMr: 'आज',      labelEn: 'Today'   },
