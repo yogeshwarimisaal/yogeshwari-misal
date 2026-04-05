@@ -502,10 +502,5 @@ const styles = {
   linkTabContent:{ textAlign: 'center', padding: '40px 20px' },
   linkTabDesc:   { fontSize: 14, color: '#888', marginBottom: 20 },
   linkBtn:       { background: COLORS.primary, color: '#fff', padding: '12px 32px', borderRadius: 12, textDecoration: 'none', fontSize: 15, fontWeight: 600 },
-  posBtn: {
-  background: 'rgba(255,255,255,0.15)',
-  border: '1px solid rgba(255,255,255,0.4)',
-  padding: '5px 12px', borderRadius: 20,
-  color: '#fff', textDecoration: 'none', fontSize: 12,
-},
+  posBtn:        {background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.4)', padding: '5px 12px', borderRadius: 20,color: '#fff', textDecoration: 'none', fontSize: 12,},
 }

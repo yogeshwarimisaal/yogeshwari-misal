@@ -4,23 +4,32 @@ import { Toaster } from 'react-hot-toast'
 import Header from '../components/Header'
 import StatCard from '../components/StatCard'
 import { useReports } from '../hooks/useReports'
+import { useAdmin } from '../hooks/useAdmin'
 import { COLORS, EXPENSE_LABELS } from '../utils/constants'
 import { formatCurrency, getTodayDate, getWeekRange, getMonthRange } from '../utils/formatters'
 import { generateBusinessReport } from '../utils/generatePDF'
 
 const PERIODS = [
-  { id: 'today',   labelMr: 'आज',      labelEn: 'Today'   },
-  { id: 'week',    labelMr: 'आठवडा',   labelEn: 'Week'    },
-  { id: 'month',   labelMr: 'महिना',   labelEn: 'Month'   },
-  { id: 'custom',  labelMr: 'कस्टम',   labelEn: 'Custom'  },
+  { id: 'today',  labelMr: 'आज',     labelEn: 'Today'  },
+  { id: 'week',   labelMr: 'आठवडा',  labelEn: 'Week'   },
+  { id: 'month',  labelMr: 'महिना',  labelEn: 'Month'  },
+  { id: 'custom', labelMr: 'कस्टम',  labelEn: 'Custom' },
 ]
 
 function getPeriodDates(period) {
   const today = getTodayDate()
   if (period === 'today') return { start: today, end: today }
-  if (period === 'week')  return { start: getWeekRange().start, end: getWeekRange().end }
+  if (period === 'week')  return { start: getWeekRange().start,  end: getWeekRange().end  }
   if (period === 'month') return { start: getMonthRange().start, end: getMonthRange().end }
   return null
+}
+
+function getPeriodLabel(period, customStart, customEnd) {
+  if (period === 'today')  return `Today ${getTodayDate()}`
+  if (period === 'week')   return `Week ${getWeekRange().start} to ${getWeekRange().end}`
+  if (period === 'month')  return `Month ${getMonthRange().start} to ${getMonthRange().end}`
+  if (period === 'custom') return `${customStart} to ${customEnd}`
+  return period
 }
 
 export default function AdminReports() {
@@ -29,9 +38,12 @@ export default function AdminReports() {
   const t = (mr, en) => lang === 'mr' ? mr : en
 
   const { report, loading, loadReport } = useReports()
-  const [period, setPeriod] = useState('today')
+  const { inventory } = useAdmin()
+
+  const [period, setPeriod]           = useState('today')
   const [customStart, setCustomStart] = useState(getTodayDate())
-  const [customEnd, setCustomEnd] = useState(getTodayDate())
+  const [customEnd, setCustomEnd]     = useState(getTodayDate())
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     if (period !== 'custom') {
@@ -40,8 +52,16 @@ export default function AdminReports() {
     }
   }, [period])
 
-  function handleCustomLoad() {
-    loadReport(customStart, customEnd)
+  async function handleDownloadPDF() {
+    if (!report) return
+    setDownloading(true)
+    try {
+      const fullReport = { ...report, inventory: inventory || [] }
+      await generateBusinessReport(fullReport, getPeriodLabel(period, customStart, customEnd))
+    } catch (e) {
+      console.error('PDF error:', e)
+    }
+    setDownloading(false)
   }
 
   const maxDailyRevenue = report
@@ -56,22 +76,26 @@ export default function AdminReports() {
     <div style={styles.container}>
       <Toaster position="top-center" />
       <Header
-        subtitle={t('व्यावसायिक रिपोर्ट', 'Business Reports')}
+        subtitle={t('व्यवसाय अहवाल', 'Business Reports')}
         rightContent={
-          <a href="/admin" style={styles.backBtn}>{t('अॅडमिन', 'Admin')}</a>
+          <a href="/admin" style={styles.backBtn}>
+            {t('अॅडमिन', 'Admin')}
+          </a>
         }
       />
 
       <div style={styles.periodBar}>
         {PERIODS.map(p => (
-          <button key={p.id}
+          <button
+            key={p.id}
             onClick={() => setPeriod(p.id)}
             style={{
               ...styles.periodBtn,
               background: period === p.id ? COLORS.primary : '#f5f5f5',
-              color: period === p.id ? '#fff' : '#555',
+              color:      period === p.id ? '#fff' : '#555',
               fontWeight: period === p.id ? 700 : 400,
-            }}>
+            }}
+          >
             {lang === 'mr' ? p.labelMr : p.labelEn}
           </button>
         ))}
@@ -79,12 +103,23 @@ export default function AdminReports() {
 
       {period === 'custom' && (
         <div style={styles.customRow}>
-          <input type="date" value={customStart}
-            onChange={e => setCustomStart(e.target.value)} style={styles.dateInput} />
+          <input
+            type="date"
+            value={customStart}
+            onChange={e => setCustomStart(e.target.value)}
+            style={styles.dateInput}
+          />
           <span style={{ color: '#888', fontSize: 13 }}>{t('ते', 'to')}</span>
-          <input type="date" value={customEnd}
-            onChange={e => setCustomEnd(e.target.value)} style={styles.dateInput} />
-          <button onClick={handleCustomLoad} style={styles.loadBtn}>
+          <input
+            type="date"
+            value={customEnd}
+            onChange={e => setCustomEnd(e.target.value)}
+            style={styles.dateInput}
+          />
+          <button
+            onClick={() => loadReport(customStart, customEnd)}
+            style={styles.loadBtn}
+          >
             {t('पाहा', 'Load')}
           </button>
         </div>
@@ -92,11 +127,28 @@ export default function AdminReports() {
 
       <div style={styles.content}>
         {loading ? (
-          <div style={styles.centered}>{t('लोड होत आहे...', 'Loading...')}</div>
+          <div style={styles.centered}>
+            {t('लोड होत आहे...', 'Loading...')}
+          </div>
         ) : !report ? (
-          <div style={styles.centered}>{t('कालावधी निवडा', 'Select a period')}</div>
+          <div style={styles.centered}>
+            {t('कालावधी निवडा', 'Select a period above')}
+          </div>
         ) : (
           <>
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              style={{
+                ...styles.downloadBtn,
+                opacity: downloading ? 0.7 : 1,
+              }}
+            >
+              {downloading
+                ? t('PDF तयार होत आहे...', 'Generating PDF...')
+                : t('PDF डाउनलोड करा', 'Download Report PDF')}
+            </button>
+
             <div style={styles.statsGrid}>
               <StatCard
                 label={t('एकूण महसूल', 'Total Revenue')}
@@ -143,8 +195,12 @@ export default function AdminReports() {
                           }} />
                         </div>
                       </div>
-                      <div style={styles.dishCount}>{dish.count} {t('वेळा', 'sold')}</div>
-                      <div style={styles.dishRevenue}>{formatCurrency(dish.revenue)}</div>
+                      <div style={styles.dishCount}>
+                        {dish.count} {t('वेळा', 'sold')}
+                      </div>
+                      <div style={styles.dishRevenue}>
+                        {formatCurrency(dish.revenue)}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -162,7 +218,9 @@ export default function AdminReports() {
                     .map(([date, rev]) => (
                       <div key={date} style={styles.barRow}>
                         <div style={styles.barLabel}>
-                          {new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                          {new Date(date).toLocaleDateString('en-IN', {
+                            day: '2-digit', month: 'short',
+                          })}
                         </div>
                         <div style={styles.barTrack}>
                           <div style={{
@@ -236,19 +294,17 @@ export default function AdminReports() {
             {report.staffPerformance.length > 0 && (
               <>
                 <div style={styles.sectionTitle}>
-                  {t('आपली कामगिरी', 'Staff Performance')}
+                  {t('स्टाफ कामगिरी', 'Staff Performance')}
                 </div>
                 <div style={styles.card}>
                   {report.staffPerformance
                     .sort((a, b) => b.totalMins - a.totalMins)
                     .map(staff => {
-                      const hrs = Math.floor(staff.totalMins / 60)
+                      const hrs  = Math.floor(staff.totalMins / 60)
                       const mins = staff.totalMins % 60
                       return (
                         <div key={staff.name} style={styles.staffRow}>
-                          <div style={styles.staffAvatar}>
-                            {staff.initials}
-                          </div>
+                          <div style={styles.staffAvatar}>{staff.initials}</div>
                           <div style={{ flex: 1 }}>
                             <div style={styles.staffName}>
                               {lang === 'mr' ? staff.name_mr : staff.name}
@@ -257,9 +313,7 @@ export default function AdminReports() {
                               {staff.shifts} {t('शिफ्ट', 'shifts')}
                             </div>
                           </div>
-                          <div style={styles.staffHours}>
-                            {hrs}h {mins}m
-                          </div>
+                          <div style={styles.staffHours}>{hrs}h {mins}m</div>
                         </div>
                       )
                     })}
@@ -274,37 +328,38 @@ export default function AdminReports() {
 }
 
 const styles = {
-  container: { minHeight: '100vh', background: COLORS.bg, fontFamily: 'sans-serif' },
-  centered: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, color: '#888' },
-  backBtn: { background: 'rgba(255,255,255,0.2)', padding: '5px 12px', borderRadius: 20, color: '#fff', textDecoration: 'none', fontSize: 12 },
-  periodBar: { display: 'flex', gap: 8, padding: '12px 14px', background: '#fff', borderBottom: '1px solid #eee', overflowX: 'auto' },
-  periodBtn: { padding: '7px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' },
-  customRow: { display: 'flex', gap: 8, padding: '10px 14px', background: '#fff', borderBottom: '1px solid #eee', alignItems: 'center', flexWrap: 'wrap' },
-  dateInput: { padding: '7px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13 },
-  loadBtn: { background: COLORS.primary, color: '#fff', border: 'none', padding: '7px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontWeight: 600 },
-  content: { padding: 14 },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 4 },
-  sectionTitle: { fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8, marginTop: 16, textTransform: 'uppercase', letterSpacing: '0.05em' },
-  card: { background: '#fff', borderRadius: 12, padding: '10px 14px', border: '1px solid #eee', marginBottom: 4 },
-  dishRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '0.5px solid #f5f5f5' },
-  dishRank: { fontSize: 12, fontWeight: 700, color: COLORS.primary, minWidth: 24 },
-  dishName: { fontSize: 13, fontWeight: 600, marginBottom: 4 },
-  dishBar: { height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' },
+  container:   { minHeight: '100vh', background: COLORS.bg, fontFamily: 'sans-serif' },
+  centered:    { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, color: '#888' },
+  backBtn:     { background: 'rgba(255,255,255,0.2)', padding: '5px 12px', borderRadius: 20, color: '#fff', textDecoration: 'none', fontSize: 12 },
+  periodBar:   { display: 'flex', gap: 8, padding: '12px 14px', background: '#fff', borderBottom: '1px solid #eee', overflowX: 'auto' },
+  periodBtn:   { padding: '7px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' },
+  customRow:   { display: 'flex', gap: 8, padding: '10px 14px', background: '#fff', borderBottom: '1px solid #eee', alignItems: 'center', flexWrap: 'wrap' },
+  dateInput:   { padding: '7px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13 },
+  loadBtn:     { background: COLORS.primary, color: '#fff', border: 'none', padding: '7px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontWeight: 600 },
+  content:     { padding: 14 },
+  downloadBtn: { width: '100%', background: COLORS.teal, color: '#fff', border: 'none', padding: 13, borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 14 },
+  statsGrid:   { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 4 },
+  sectionTitle:{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8, marginTop: 16, textTransform: 'uppercase', letterSpacing: '0.05em' },
+  card:        { background: '#fff', borderRadius: 12, padding: '10px 14px', border: '1px solid #eee', marginBottom: 4 },
+  dishRow:     { display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '0.5px solid #f5f5f5' },
+  dishRank:    { fontSize: 12, fontWeight: 700, color: COLORS.primary, minWidth: 24 },
+  dishName:    { fontSize: 13, fontWeight: 600, marginBottom: 4 },
+  dishBar:     { height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' },
   dishBarFill: { height: '100%', background: COLORS.teal, borderRadius: 3, transition: 'width 0.3s' },
-  dishCount: { fontSize: 12, color: '#888', minWidth: 55, textAlign: 'right' },
+  dishCount:   { fontSize: 12, color: '#888', minWidth: 55, textAlign: 'right' },
   dishRevenue: { fontSize: 12, color: COLORS.primary, fontWeight: 600, minWidth: 65, textAlign: 'right' },
-  barRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '0.5px solid #f5f5f5' },
-  barLabel: { fontSize: 12, color: '#888', minWidth: 45 },
-  barTrack: { flex: 1, height: 10, background: '#f0f0f0', borderRadius: 5, overflow: 'hidden' },
-  barFill: { height: '100%', borderRadius: 5, transition: 'width 0.4s' },
-  barValue: { fontSize: 12, color: '#555', minWidth: 70, textAlign: 'right' },
-  expRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '0.5px solid #f5f5f5' },
-  expCat: { fontSize: 12, color: '#555', minWidth: 90 },
-  expBar: { flex: 1, height: 8, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' },
-  expAmount: { fontSize: 12, fontWeight: 600, color: COLORS.primary, minWidth: 65, textAlign: 'right' },
-  staffRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '0.5px solid #f5f5f5' },
+  barRow:      { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '0.5px solid #f5f5f5' },
+  barLabel:    { fontSize: 12, color: '#888', minWidth: 45 },
+  barTrack:    { flex: 1, height: 10, background: '#f0f0f0', borderRadius: 5, overflow: 'hidden' },
+  barFill:     { height: '100%', borderRadius: 5, transition: 'width 0.4s' },
+  barValue:    { fontSize: 12, color: '#555', minWidth: 70, textAlign: 'right' },
+  expRow:      { display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '0.5px solid #f5f5f5' },
+  expCat:      { fontSize: 12, color: '#555', minWidth: 90 },
+  expBar:      { flex: 1, height: 8, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' },
+  expAmount:   { fontSize: 12, fontWeight: 600, color: COLORS.primary, minWidth: 65, textAlign: 'right' },
+  staffRow:    { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '0.5px solid #f5f5f5' },
   staffAvatar: { width: 36, height: 36, borderRadius: '50%', background: COLORS.primaryLight, color: COLORS.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 },
-  staffName: { fontSize: 13, fontWeight: 600 },
-  staffSub: { fontSize: 11, color: '#aaa' },
-  staffHours: { fontSize: 14, fontWeight: 700, color: COLORS.teal },
+  staffName:   { fontSize: 13, fontWeight: 600 },
+  staffSub:    { fontSize: 11, color: '#aaa' },
+  staffHours:  { fontSize: 14, fontWeight: 700, color: COLORS.teal },
 }
