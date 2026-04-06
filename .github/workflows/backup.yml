@@ -1,0 +1,47 @@
+name: Weekly Database Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Create backup folder
+        run: mkdir -p backups
+
+      - name: Export database
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          supabase db dump \
+            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
+            --data-only \
+            -f backups/data_${DATE}.sql
+          supabase db dump \
+            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
+            --schema-only \
+            -f backups/schema_${DATE}.sql
+
+      - name: Keep only last 8 backups
+        run: |
+          cd backups
+          ls -t data_*.sql | tail -n +9 | xargs -r rm
+          ls -t schema_*.sql | tail -n +9 | xargs -r rm
+
+      - name: Commit backup
+        run: |
+          git config user.name "Backup Bot"
+          git config user.email "backup@yogeshwarimisal.com"
+          git add backups/
+          git diff --staged --quiet || git commit -m "Weekly backup $(date +%Y-%m-%d)"
+          git push
