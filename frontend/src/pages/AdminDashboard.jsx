@@ -184,6 +184,20 @@ function DashboardTab({ stats, todayExpenses, t }) {
           sub={`${stats.onlineOrders} ${t('ऑनलाइन', 'online')}`}
           accent={COLORS.blue}
         />
+        <div style={{ ...styles.statsGrid, marginTop: 10 }}>
+  <StatCard
+    label={t('रोख रक्कम (EOD)', 'Cash in Box (EOD)')}
+    value={formatCurrency(stats.cashRevenue || 0)}
+    sub={`${stats.cashOrders} ${t('रोख ऑर्डर', 'cash orders')}`}
+    accent='#1D9E75'
+  />
+  <StatCard
+    label={t('ऑनलाइन / UPI', 'Online / UPI')}
+    value={formatCurrency(stats.onlineRevenue || 0)}
+    sub={`${stats.onlineOrders} ${t('ऑनलाइन ऑर्डर', 'online orders')}`}
+    accent='#185FA5'
+  />
+</div>
       </div>
       {stats.topDish && (
         <div style={styles.topDishCard}>

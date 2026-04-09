@@ -57,13 +57,18 @@ export function useAdmin() {
     })
     const topDish = Object.entries(dishCount).sort((a, b) => b[1] - a[1])[0]
 
-    setTodayStats({
-      revenue,
-      orders: orders.length,
-      cashOrders,
-      onlineOrders,
-      topDish: topDish ? { name: topDish[0], count: topDish[1] } : null,
-    })
+    const cashRevenue   = orders.filter(o => o.payment_mode === 'cash').reduce((s,o) => s + (o.total_amount||0), 0)
+    const onlineRevenue = orders.filter(o => o.payment_mode === 'online').reduce((s,o) => s + (o.total_amount||0), 0)
+
+setTodayStats({
+  revenue,
+  orders: orders.length,
+  cashOrders,
+  onlineOrders,
+  cashRevenue,
+  onlineRevenue,
+  topDish: topDish ? { name: topDish[0], count: topDish[1] } : null,
+})
   }
 
   async function loadExpenses() {

@@ -135,22 +135,24 @@ export default function StaffPOS() {
           <button onClick={resetForm} style={styles.newOrderBtn}>
             + {t('नवीन ऑर्डर', 'New Order')}
           </button>
-          {orders.map(order => (
-            <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <div
-                onClick={() => { setActiveOrderId(order.id); setEditingOrderId(null) }}
-                style={{
-                  ...styles.orderChip,
-                  background: activeOrderId === order.id ? COLORS.teal : '#fff',
-                  color: activeOrderId === order.id ? '#fff' : '#333',
-                }}>
-                #{order.order_number} {order.order_type === 'table' ? `T${order.table_number}` : 'P'}
-              </div>
-              <button onClick={() => startEdit(order)} style={styles.editBtn}>
-                {t('बदल', 'Edit')}
-              </button>
-            </div>
-          ))}
+         {orders.map(order => (
+  <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+    <div
+      onClick={() => { setActiveOrderId(order.id); setEditingOrderId(null) }}
+      style={{
+        ...styles.orderChip,
+        background: activeOrderId === order.id ? COLORS.teal : '#fff',
+        color:      activeOrderId === order.id ? '#fff' : '#333',
+      }}>
+      {order.order_type === 'table'
+        ? `Table ${order.table_number} · #${order.order_number}`
+        : `Parcel · #${order.order_number}`}
+    </div>
+    <button onClick={() => startEdit(order)} style={styles.editBtn}>
+      Edit
+    </button>
+  </div>
+))}
         </div>
       </div>
 

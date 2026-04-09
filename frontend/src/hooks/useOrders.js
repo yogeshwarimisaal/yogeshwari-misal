@@ -7,8 +7,22 @@ export function useOrders() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadOpenOrders()
-  }, [])
+  loadOpenOrders()
+
+  const subscription = supabase
+    .channel('orders-realtime')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'orders' },
+      () => { loadOpenOrders() }
+    )
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'order_items' },
+      () => { loadOpenOrders() }
+    )
+    .subscribe()
+
+  return () => { supabase.removeChannel(subscription) }
+}, [])
 
   async function loadOpenOrders() {
     setLoading(true)
