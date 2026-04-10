@@ -7,6 +7,7 @@ import BulkOrders       from './pages/BulkOrders'
 import AdminMenuManager from './pages/AdminMenuManager'
 import AdminReports     from './pages/AdminReports'
 import QuickOrder       from './pages/QuickOrder'
+import AdminOrderManager from './pages/AdminOrderManager'
 
 function OfflineBanner() {
   const [offline, setOffline] = useState(!navigator.onLine)
@@ -46,6 +47,8 @@ function App() {
         <Route path="/reports"      element={<AdminReports />}     />
         <Route path="*"             element={<Navigate to="/" replace />} />
         <Route path="/quick" element={<QuickOrder />} />
+        <Route path="/order-manager" element={<AdminOrderManager />} />
+        
       </Routes>
     </BrowserRouter>
   )

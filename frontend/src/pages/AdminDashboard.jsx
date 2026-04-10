@@ -37,6 +37,7 @@ function AdminPanel({ activeTab, setActiveTab }) {
     { id: 'reports',     label: t('रिपोर्ट्स',     'Reports')  },
     { id: 'menumanager', label: t('मेनू',      'Menu')     },
     { id: 'bulk',        label: t('बल्क',      'Bulk')     },
+    { id: 'orders', label: t('ऑर्डर', 'Orders') },
   ]
 
   return (
@@ -146,6 +147,16 @@ function AdminPanel({ activeTab, setActiveTab }) {
                 </a>
               </div>
             )}
+            {activeTab === 'orders' && (
+  <div style={styles.linkTabContent}>
+    <div style={styles.linkTabDesc}>
+      {t('सर्व ऑर्डर पाहा, बदला किंवा डिलीट करा', 'View, edit or delete any order')}
+    </div>
+    <a href="/order-manager" style={styles.linkBtn}>
+      {t('ऑर्डर व्यवस्थापन उघडा', 'Open Order Manager')}
+    </a>
+  </div>
+)}
           </>
         )}
       </div>
