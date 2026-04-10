@@ -44,7 +44,7 @@ function AdminPanel({ activeTab, setActiveTab }) {
     <div style={styles.container}>
       <Toaster position="top-center" />
       <Header
-        subtitle={t('अॅडमिन पॅनल', 'Admin Panel')}
+        subtitle={t('ऍडमिन पॅनल', 'Admin Panel')}
         rightContent={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
   <a href="/pos" style={styles.posBtn}>

@@ -105,7 +105,7 @@ export default function StaffPOS() {
         subtitle={t('ऑर्डर स्क्रीन', 'Order Screen')}
         rightContent={
           <a href="/" style={styles.endShiftBtn}>
-            {t('शिफ्ट संपवा', 'End Shift')}
+            {t('होम', 'Home')}
           </a>
         }
       />
@@ -206,7 +206,7 @@ export default function StaffPOS() {
 
       <div style={styles.adminBar}>
         <a href="/admin" style={styles.adminLink}>
-          {t('अॅडमिन पॅनल', 'Admin Panel')}
+          {t('ऍडमिन पॅनल', 'Admin Panel')}
         </a>
       </div>
     </div>
