@@ -40,14 +40,16 @@ export async function generateBusinessReport(reportData, period) {
   const CW = PW - M * 2
 
   // ── HEADER ─────────────────────────────────────────────────────
-  drawRect(doc, 0, 0, PW, 36, ORANGE, 0)
-  drawText(doc, 'Yogeshwari Misal', M, 13, 20, '#ffffff', 'left', true)
-  drawText(doc, 'योगेश्वरी मिसळ', M, 21, 11, '#ffddcc)')
-  drawText(doc, `Business Report — ${period}`, M, 29, 9, '#ffddcc')
-  drawText(doc, new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }),
-    PW - M, 29, 9, '#ffddcc', 'right')
-
-  let y = 44
+ rect(0, 0, PW, 34, ORANGE)
+text('Yogeshwari Misal',         M,      12, 20, '#ffffff', 'left', true)
+text('Yogeshwari Misal Cafe',    M,      21, 11, '#ffddcc', 'left', false)
+text('Business Report',          M,      28, 9,  '#ffddcc', 'left', false)
+text(period,                     M + 80, 28, 9,  '#ffddcc', 'left', false)
+text(
+  new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+  PW - M, 28, 9, '#ffddcc', 'right'
+)
+y = 40
 
   // ── STAT CARDS ─────────────────────────────────────────────────
   const stats = [
