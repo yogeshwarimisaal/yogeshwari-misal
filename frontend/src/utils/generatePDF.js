@@ -42,7 +42,7 @@ export async function generateBusinessReport(reportData, period) {
   // ── HEADER ─────────────────────────────────────────────────────
   drawRect(doc, 0, 0, PW, 36, ORANGE, 0)
   drawText(doc, 'Yogeshwari Misal', M, 13, 20, '#ffffff', 'left', true)
-  drawText(doc, 'योगेश्वरी मिसळ', M, 21, 11, 'rgba(255,255,255,0.85)')
+  drawText(doc, 'योगेश्वरी मिसळ', M, 21, 11, '#ffddcc)')
   drawText(doc, `Business Report — ${period}`, M, 29, 9, '#ffddcc')
   drawText(doc, new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }),
     PW - M, 29, 9, '#ffddcc', 'right')
