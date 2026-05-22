@@ -2,21 +2,20 @@ name: Weekly Database Backup
 
 on:
   schedule:
-    - cron: '0 2 * * 0'   # Every Sunday at 02:00 UTC
-  workflow_dispatch:       # Allow manual trigger
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write          # Required for git push
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # If you need write permissions for push, GITHUB_TOKEN is enough for same repo.
-          # For cross-repo or extra safety, use a personal access token:
-          # token: ${{ secrets.PAT_TOKEN }}
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -30,58 +29,30 @@ jobs:
         run: |
           DATE=$(date +%Y-%m-%d)
           BACKUP_FILE="backups/data_${DATE}.sql"
-          
-          echo "Dumping database from Supabase..."
           supabase db dump \
             --db-url "${{ secrets.SUPABASE_DB_URL }}" \
             --data-only \
             -f "$BACKUP_FILE"
-          
-          # Verify the dump succeeded and file is not empty
           if [ ! -s "$BACKUP_FILE" ]; then
-            echo "❌ Backup failed: file is empty or missing!"
+            echo "❌ Backup failed"
             exit 1
           fi
-          
-          LINES=$(wc -l < "$BACKUP_FILE")
-          echo "✅ Backup created: $BACKUP_FILE ($LINES lines)"
-          echo "First 5 lines (sample):"
-          head -n 5 "$BACKUP_FILE"
+          echo "✅ Backup created: $BACKUP_FILE ($(wc -l < "$BACKUP_FILE") lines)"
 
       - name: Keep only last 8 backups
         run: |
           cd backups
-          # Count data_*.sql files
-          COUNT=$(ls data_*.sql 2>/dev/null | wc -l)
-          echo "Current backup count: $COUNT"
-          
-          if [ "$COUNT" -gt 8 ]; then
-            # List by modification time (newest first), delete all except first 8
-            ls -t data_*.sql | tail -n +9 | xargs -r rm -f
-            echo "Cleaned old backups. Remaining: $(ls data_*.sql | wc -l)"
-          else
-            echo "No cleanup needed (${COUNT} <= 8)"
-          fi
+          ls -t data_*.sql 2>/dev/null | tail -n +9 | xargs -r rm -f
+          echo "Remaining backups: $(ls data_*.sql | wc -l)"
 
       - name: Commit and push backup
         run: |
-          # Configure git user
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Add all changes in backups folder
           git add backups/
-          
-          # Check if there are any changes to commit
           if git diff --staged --quiet; then
-            echo "No new backup data to commit (file unchanged or empty)."
+            echo "No changes to commit"
             exit 0
           fi
-          
-          # Commit with date
           git commit -m "Automated database backup $(date +%Y-%m-%d)"
-          
-          # Push to the same branch (usually main)
-          # The checkout action already fetches the current branch, so HEAD is fine
           git push origin HEAD
-          echo "✅ Backup committed and pushed to repository."
