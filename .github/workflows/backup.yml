@@ -8,9 +8,12 @@ on:
 jobs:
   backup:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -20,28 +23,34 @@ jobs:
       - name: Create backup folder
         run: mkdir -p backups
 
-      - name: Export database
+      - name: Dump data backup
         run: |
           DATE=$(date +%Y-%m-%d)
           supabase db dump \
             --db-url "${{ secrets.SUPABASE_DB_URL }}" \
             --data-only \
             -f backups/data_${DATE}.sql
-          supabase db dump \
-            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
-            --schema-only \
-            -f backups/schema_${DATE}.sql
+          echo "✅ Backup created: backups/data_${DATE}.sql"
+          wc -l backups/data_${DATE}.sql
 
       - name: Keep only last 8 backups
         run: |
           cd backups
-          ls -t data_*.sql | tail -n +9 | xargs -r rm
-          ls -t schema_*.sql | tail -n +9 | xargs -r rm
+          COUNT=$(ls data_*.sql 2>/dev/null | wc -l)
+          echo "Current backup count: $COUNT"
+          if [ "$COUNT" -gt 8 ]; then
+            ls -t data_*.sql | tail -n +9 | xargs rm -f
+            echo "Cleaned old backups"
+          fi
 
-      - name: Commit backup
+      - name: Commit and push
         run: |
           git config user.name "Backup Bot"
-          git config user.email "backup@yogeshwarimisal.com"
+          git config user.email "backup@yogeshwarimisal"
           git add backups/
-          git diff --staged --quiet || git commit -m "Weekly backup $(date +%Y-%m-%d)"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Weekly backup $(date +%Y-%m-%d)"
+            git push origin HEAD
+          fi
