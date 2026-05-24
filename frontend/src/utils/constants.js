@@ -15,7 +15,7 @@ export const COLORS = {
   textLight:    '#cccccc',
 }
 
-export const ADMIN_PIN = '9999'
+export const ADMIN_PIN = '9890'
 
 export const CAFE = {
   nameMr: 'योगेश्वरी मिसळ',

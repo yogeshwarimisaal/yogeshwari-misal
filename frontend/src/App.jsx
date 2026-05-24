@@ -1,13 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import StaffCheckin     from './pages/StaffCheckin'
-import StaffPOS         from './pages/StaffPOS'
-import AdminDashboard   from './pages/AdminDashboard'
-import BulkOrders       from './pages/BulkOrders'
-import AdminMenuManager from './pages/AdminMenuManager'
-import AdminReports     from './pages/AdminReports'
-import QuickOrder       from './pages/QuickOrder'
+import QuickOrder        from './pages/QuickOrder'
+import StaffPOS          from './pages/StaffPOS'
+import AdminDashboard    from './pages/AdminDashboard'
+import BulkOrders        from './pages/BulkOrders'
+import AdminMenuManager  from './pages/AdminMenuManager'
+import AdminReports      from './pages/AdminReports'
 import AdminOrderManager from './pages/AdminOrderManager'
+import StaffCheckin      from './pages/StaffCheckin'
 
 function OfflineBanner() {
   const [offline, setOffline] = useState(!navigator.onLine)
@@ -39,16 +39,15 @@ function App() {
     <BrowserRouter>
       <OfflineBanner />
       <Routes>
-        <Route path="/"             element={<StaffCheckin />}     />
-        <Route path="/pos"          element={<StaffPOS />}         />
-        <Route path="/admin"        element={<AdminDashboard />}   />
-        <Route path="/bulk"         element={<BulkOrders />}       />
-        <Route path="/menu-manager" element={<AdminMenuManager />} />
-        <Route path="/reports"      element={<AdminReports />}     />
+        <Route path="/"             element={<QuickOrder />}        />
+        <Route path="/pos"          element={<StaffPOS />}          />
+        <Route path="/admin"        element={<AdminDashboard />}    />
+        <Route path="/bulk"         element={<BulkOrders />}        />
+        <Route path="/menu-manager" element={<AdminMenuManager />}  />
+        <Route path="/reports"      element={<AdminReports />}      />
+        <Route path="/order-manager"element={<AdminOrderManager />} />
+        <Route path="/checkin"      element={<StaffCheckin />}      />
         <Route path="*"             element={<Navigate to="/" replace />} />
-        <Route path="/quick" element={<QuickOrder />} />
-        <Route path="/order-manager" element={<AdminOrderManager />} />
-        
       </Routes>
     </BrowserRouter>
   )
