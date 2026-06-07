@@ -6,21 +6,30 @@ import { useMenu } from '../hooks/useMenu'
 import { supabase } from '../api/supabase'
 import { COLORS } from '../utils/constants'
 import { formatCurrency } from '../utils/formatters'
+import { generateCustomerBill } from '../utils/generateBill'
 
-const ZOMATO_RED = '#E23744'
+const ZOMATO_RED   = '#E23744'
 const ZOMATO_LIGHT = '#fce8ea'
 
 export default function QuickOrder() {
   const { i18n } = useTranslation()
   const lang = i18n.language
-  const t = (mr, en) => lang === 'mr' ? mr : en
+  const t    = (mr, en) => lang === 'mr' ? mr : en
   const { menu, loading } = useMenu()
 
-  const [cart,        setCart]        = useState([])
-  const [orderType,   setOrderType]   = useState('table')
-  const [tableNumber, setTableNumber] = useState('')
-  const [saving,      setSaving]      = useState(false)
-  const [lastOrder,   setLastOrder]   = useState(null)
+  const [cart,          setCart]          = useState([])
+  const [orderType,     setOrderType]     = useState('table')
+  const [tableNumber,   setTableNumber]   = useState('')
+  const [orderDate,     setOrderDate]     = useState(new Date().toISOString().split('T')[0])
+  const [orderTime,     setOrderTime]     = useState(new Date().toTimeString().slice(0, 5))
+  const [saving,        setSaving]        = useState(false)
+  const [lastOrder,     setLastOrder]     = useState(null)
+  const [showContact,   setShowContact]   = useState(false)
+  const [contactName,   setContactName]   = useState('')
+  const [contactPhone,  setContactPhone]  = useState('')
+  const [savingContact, setSavingContact] = useState(false)
+
+  const isBackdated = orderDate !== new Date().toISOString().split('T')[0]
 
   const regular   = menu.filter(i => i.category === 'regular')
   const extras    = menu.filter(i => i.category === 'extras')
@@ -59,7 +68,8 @@ export default function QuickOrder() {
 
     setSaving(true)
     try {
-      const total = getTotal()
+      const total      = getTotal()
+      const orderDT    = new Date(`${orderDate}T${orderTime}:00`).toISOString()
 
       const { data: order, error: oe } = await supabase
         .from('orders')
@@ -69,7 +79,8 @@ export default function QuickOrder() {
           status:       'completed',
           payment_mode: paymentMode,
           total_amount: total,
-          completed_at: new Date().toISOString(),
+          created_at:   orderDT,
+          completed_at: orderDT,
         })
         .select()
         .single()
@@ -90,6 +101,9 @@ export default function QuickOrder() {
       setLastOrder({ ...order, items: [...cart], total })
       setCart([])
       setTableNumber('')
+      setShowContact(false)
+      setContactName('')
+      setContactPhone('')
 
       if (paymentMode === 'zomato') {
         toast.success(
@@ -106,6 +120,46 @@ export default function QuickOrder() {
       toast.error('Error: ' + e.message)
     }
     setSaving(false)
+  }
+
+  async function saveCustomerContact() {
+    if (!contactPhone && !contactName) {
+      toast.error(t('नाव किंवा नंबर टाका', 'Enter name or phone'))
+      return
+    }
+    setSavingContact(true)
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .upsert({
+          phone:       contactPhone || null,
+          name:        contactName  || null,
+          last_order_id: lastOrder?.id || null,
+          last_visit:  new Date().toISOString().split('T')[0],
+        }, { onConflict: 'phone' })
+
+      if (error) throw error
+
+      toast.success(
+        t('संपर्क जतन झाला! 🎉', 'Contact saved! 🎉'),
+        { style: { background: COLORS.tealLight, color: COLORS.tealDark } }
+      )
+      setShowContact(false)
+      setContactName('')
+      setContactPhone('')
+    } catch (e) {
+      toast.error('Error: ' + e.message)
+    }
+    setSavingContact(false)
+  }
+
+  async function printBill() {
+    if (!lastOrder) return
+    try {
+      await generateCustomerBill(lastOrder, lastOrder.items)
+    } catch (e) {
+      toast.error('Bill error: ' + e.message)
+    }
   }
 
   if (loading) {
@@ -169,11 +223,39 @@ export default function QuickOrder() {
       {orderType === 'zomato' && (
         <div style={s.zomatoBanner}>
           🛵 {t(
-            'Zomato ऑर्डर — पेमेंट ४-५ बिझनेस दिवसांत Zomato कडून येईल',
-            'Zomato Order — Payment arrives from Zomato in 4-5 business days'
+            'Zomato ऑर्डर — पेमेंट ४-५ बिझनेस दिवसांत येईल',
+            'Zomato Order — Payment arrives in 4-5 business days'
           )}
         </div>
       )}
+
+      <div style={s.dateBar}>
+        <span style={s.dateLabel}>
+          📅 {t('तारीख', 'Date')}:
+        </span>
+        <input
+          type="date"
+          value={orderDate}
+          onChange={e => setOrderDate(e.target.value)}
+          style={s.dateInput}
+        />
+        <input
+          type="time"
+          value={orderTime}
+          onChange={e => setOrderTime(e.target.value)}
+          style={s.dateInput}
+        />
+        {isBackdated && (
+          <div style={s.backdatedBadge}>
+            {t('मागील तारीख', 'Backdated')}
+          </div>
+        )}
+        {!isBackdated && (
+          <span style={s.todayLabel}>
+            {t('आज', 'Today')} ✓
+          </span>
+        )}
+      </div>
 
       <div style={s.menuSection}>
         {regular.length > 0 && (
@@ -285,20 +367,79 @@ export default function QuickOrder() {
       )}
 
       {lastOrder && (
-        <div style={{
-          ...s.lastOrderBanner,
-          background: lastOrder.payment_mode === 'zomato' ? ZOMATO_LIGHT  : COLORS.tealLight,
-          color:      lastOrder.payment_mode === 'zomato' ? '#c0392b'      : COLORS.tealDark,
-          border:     `1px solid ${lastOrder.payment_mode === 'zomato' ? ZOMATO_RED : COLORS.teal}`,
-        }}>
-          {lastOrder.payment_mode === 'zomato' ? '🛵' : '✅'}
-          {' '}{t('शेवटची', 'Last')} #{lastOrder.order_number} — ₹{lastOrder.total}
-          {' — '}
-          {lastOrder.payment_mode === 'zomato'
-            ? t('Zomato (पेमेंट प्रलंबित)', 'Zomato (payment pending)')
-            : lastOrder.payment_mode === 'cash'
-              ? t('रोख', 'Cash')
-              : 'UPI'}
+        <div style={s.lastOrderSection}>
+          <div style={{
+            ...s.lastOrderBanner,
+            background: lastOrder.payment_mode === 'zomato' ? ZOMATO_LIGHT  : COLORS.tealLight,
+            color:      lastOrder.payment_mode === 'zomato' ? '#c0392b'      : COLORS.tealDark,
+            border:     `1px solid ${lastOrder.payment_mode === 'zomato' ? ZOMATO_RED : COLORS.teal}`,
+          }}>
+            {lastOrder.payment_mode === 'zomato' ? '🛵' : '✅'}
+            {' '}{t('शेवटची ऑर्डर', 'Last order')} #{lastOrder.order_number}
+            {' — '}₹{lastOrder.total}
+            {' — '}
+            {lastOrder.payment_mode === 'zomato'
+              ? t('Zomato (प्रलंबित)', 'Zomato (pending)')
+              : lastOrder.payment_mode === 'cash'
+                ? t('रोख', 'Cash')
+                : 'UPI'}
+            {isBackdated && (
+              <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.8 }}>
+                ({lastOrder.created_at?.split('T')[0]})
+              </span>
+            )}
+          </div>
+
+          <div style={s.actionBtns}>
+            <button onClick={printBill} style={s.billBtn}>
+              🧾 {t('बिल', 'Bill')}
+            </button>
+            <button
+              onClick={() => setShowContact(!showContact)}
+              style={s.contactBtn}
+            >
+              📱 {t('संपर्क जोडा', 'Add Contact')}
+            </button>
+          </div>
+
+          {showContact && (
+            <div style={s.contactForm}>
+              <div style={s.contactTitle}>
+                📱 {t('ग्राहक आमच्या WhatsApp/FB ग्रुपमध्ये सामील होणार आहे', 'Customer joining our WhatsApp/FB group')}
+              </div>
+              <input
+                type="text"
+                placeholder={t('ग्राहकाचे नाव (ऐच्छिक)', 'Customer name (optional)')}
+                value={contactName}
+                onChange={e => setContactName(e.target.value)}
+                style={s.contactInput}
+              />
+              <input
+                type="tel"
+                placeholder={t('मोबाईल नंबर (ऐच्छिक)', 'Mobile number (optional)')}
+                value={contactPhone}
+                onChange={e => setContactPhone(e.target.value)}
+                style={s.contactInput}
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={saveCustomerContact}
+                  disabled={savingContact}
+                  style={{ ...s.saveContactBtn, flex: 1 }}
+                >
+                  {savingContact
+                    ? t('जतन होत आहे...', 'Saving...')
+                    : t('जतन करा', 'Save Contact')}
+                </button>
+                <button
+                  onClick={() => { setShowContact(false); setContactName(''); setContactPhone('') }}
+                  style={{ ...s.skipBtn, flex: 1 }}
+                >
+                  {t('वगळा', 'Skip')}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -306,7 +447,7 @@ export default function QuickOrder() {
 }
 
 function Tile({ item, cart, onAdd, lang, color }) {
-  const inCart = cart.find(c => c.id === item.id)
+  const inCart  = cart.find(c => c.id === item.id)
   const lightBg = color === COLORS.blue ? '#E6F1FB' : COLORS.primaryLight
   return (
     <div
@@ -364,189 +505,49 @@ const ts = {
 }
 
 const s = {
-  container: {
-    minHeight:   '100vh',
-    background:  COLORS.bg,
-    fontFamily:  'sans-serif',
-    paddingBottom: 20,
-  },
-  centered: {
-    display:        'flex',
-    alignItems:     'center',
-    justifyContent: 'center',
-    height:         '100vh',
-    color:          '#888',
-  },
-  header: {
-    background:     COLORS.primary,
-    padding:        '12px 14px',
-    display:        'flex',
-    justifyContent: 'space-between',
-    alignItems:     'center',
-  },
-  title:   { color: '#fff', fontSize: 17, fontWeight: 700 },
-  sub:     { color: 'rgba(255,255,255,0.85)', fontSize: 11 },
-  langBtn: {
-    background:   'rgba(255,255,255,0.2)',
-    border:       'none',
-    color:        '#fff',
-    padding:      '5px 12px',
-    borderRadius: 20,
-    fontSize:     12,
-    cursor:       'pointer',
-  },
-  navBtn: {
-    background:     'rgba(255,255,255,0.15)',
-    border:         '1px solid rgba(255,255,255,0.4)',
-    padding:        '5px 12px',
-    borderRadius:   20,
-    color:          '#fff',
-    textDecoration: 'none',
-    fontSize:       12,
-  },
-  typeBar: {
-    display:       'flex',
-    gap:           8,
-    padding:       '10px 12px',
-    background:    '#fff',
-    borderBottom:  '1px solid #eee',
-    alignItems:    'center',
-    flexWrap:      'wrap',
-  },
-  typeBtn: {
-    padding:      '8px 16px',
-    borderRadius: 20,
-    border:       '2px solid',
-    cursor:       'pointer',
-    fontSize:     13,
-    fontWeight:   600,
-    transition:   'all 0.15s',
-  },
-  tableInput: {
-    padding:      '8px 12px',
-    borderRadius: 20,
-    border:       '1px solid #ddd',
-    width:        100,
-    fontSize:     14,
-  },
-  zomatoBanner: {
-    background:  ZOMATO_LIGHT,
-    color:       '#c0392b',
-    padding:     '8px 14px',
-    fontSize:    12,
-    fontWeight:  600,
-    borderBottom:'1px solid #f5c0c4',
-  },
-  menuSection: { padding: '10px 12px' },
-  catLabel: {
-    fontSize:      11,
-    fontWeight:    700,
-    color:         '#888',
-    letterSpacing: '0.05em',
-    marginBottom:  8,
-    marginTop:     10,
-    textTransform: 'uppercase',
-  },
-  grid: {
-    display:             'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap:                 8,
-    marginBottom:        6,
-  },
-  cartBar: {
-    position:    'sticky',
-    bottom:      0,
-    background:  '#fff',
-    borderTop:   '2px solid #eee',
-    padding:     '10px 12px',
-    zIndex:      100,
-  },
-  cartList:    { marginBottom: 8 },
-  cartRow: {
-    display:       'flex',
-    alignItems:    'center',
-    gap:           8,
-    padding:       '5px 0',
-    borderBottom:  '0.5px solid #f0f0f0',
-  },
-  cartName:    { flex: 1, fontSize: 13, color: '#1a1a1a' },
-  qRow:        { display: 'flex', alignItems: 'center', gap: 6 },
-  qBtn: {
-    width:          26,
-    height:         26,
-    borderRadius:   8,
-    border:         '1px solid #ddd',
-    background:     '#f5f5f5',
-    cursor:         'pointer',
-    fontSize:       16,
-    display:        'flex',
-    alignItems:     'center',
-    justifyContent: 'center',
-  },
-  qNum:        { fontSize: 14, fontWeight: 700, minWidth: 20, textAlign: 'center' },
-  cartAmt:     { fontSize: 13, color: COLORS.primary, fontWeight: 600, minWidth: 45, textAlign: 'right' },
-  totalRow: {
-    display:        'flex',
-    justifyContent: 'space-between',
-    padding:        '7px 0 9px',
-    borderTop:      '1px solid #eee',
-  },
-  totalLabel:  { fontSize: 15, fontWeight: 600, color: '#1a1a1a' },
-  totalVal:    { fontSize: 20, fontWeight: 700, color: COLORS.primary },
-  payBtns: {
-    display:             'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap:                 8,
-    marginBottom:        6,
-  },
-  cashBtn: {
-    background:   COLORS.teal,
-    color:        '#fff',
-    border:       'none',
-    padding:      '13px',
-    borderRadius: 12,
-    fontSize:     15,
-    fontWeight:   700,
-    cursor:       'pointer',
-  },
-  onlineBtn: {
-    background:   COLORS.blue,
-    color:        '#fff',
-    border:       'none',
-    padding:      '13px',
-    borderRadius: 12,
-    fontSize:     15,
-    fontWeight:   700,
-    cursor:       'pointer',
-  },
-  zomatoPayBtn: {
-    width:        '100%',
-    background:   ZOMATO_RED,
-    color:        '#fff',
-    border:       'none',
-    padding:      '13px',
-    borderRadius: 12,
-    fontSize:     15,
-    fontWeight:   700,
-    cursor:       'pointer',
-    marginBottom: 6,
-  },
-  clearBtn: {
-    width:        '100%',
-    background:   '#f5f5f5',
-    color:        '#888',
-    border:       'none',
-    padding:      '8px',
-    borderRadius: 10,
-    fontSize:     13,
-    cursor:       'pointer',
-    marginTop:    4,
-  },
-  lastOrderBanner: {
-    borderRadius: 10,
-    padding:      '10px 14px',
-    margin:       '10px 12px 0',
-    fontSize:     13,
-    fontWeight:   600,
-  },
+  container:      { minHeight: '100vh', background: COLORS.bg, fontFamily: 'sans-serif', paddingBottom: 20 },
+  centered:       { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#888' },
+  header:         { background: COLORS.primary, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  title:          { color: '#fff', fontSize: 17, fontWeight: 700 },
+  sub:            { color: 'rgba(255,255,255,0.85)', fontSize: 11 },
+  langBtn:        { background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '5px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer' },
+  navBtn:         { background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.4)', padding: '5px 12px', borderRadius: 20, color: '#fff', textDecoration: 'none', fontSize: 12 },
+  typeBar:        { display: 'flex', gap: 8, padding: '10px 12px', background: '#fff', borderBottom: '1px solid #eee', alignItems: 'center', flexWrap: 'wrap' },
+  typeBtn:        { padding: '8px 16px', borderRadius: 20, border: '2px solid', cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.15s' },
+  tableInput:     { padding: '8px 12px', borderRadius: 20, border: '1px solid #ddd', width: 100, fontSize: 14 },
+  zomatoBanner:   { background: ZOMATO_LIGHT, color: '#c0392b', padding: '8px 14px', fontSize: 12, fontWeight: 600, borderBottom: '1px solid #f5c0c4' },
+  dateBar:        { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#FAEEDA', borderBottom: '1px solid #f0d9a0', flexWrap: 'wrap' },
+  dateLabel:      { fontSize: 12, fontWeight: 600, color: '#633806' },
+  dateInput:      { padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13 },
+  backdatedBadge: { background: '#BA7517', color: '#fff', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 },
+  todayLabel:     { fontSize: 11, color: '#BA7517', fontWeight: 600 },
+  menuSection:    { padding: '10px 12px' },
+  catLabel:       { fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: '0.05em', marginBottom: 8, marginTop: 10, textTransform: 'uppercase' },
+  grid:           { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 6 },
+  cartBar:        { position: 'sticky', bottom: 0, background: '#fff', borderTop: '2px solid #eee', padding: '10px 12px', zIndex: 100 },
+  cartList:       { marginBottom: 8 },
+  cartRow:        { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: '0.5px solid #f0f0f0' },
+  cartName:       { flex: 1, fontSize: 13, color: '#1a1a1a' },
+  qRow:           { display: 'flex', alignItems: 'center', gap: 6 },
+  qBtn:           { width: 26, height: 26, borderRadius: 8, border: '1px solid #ddd', background: '#f5f5f5', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  qNum:           { fontSize: 14, fontWeight: 700, minWidth: 20, textAlign: 'center' },
+  cartAmt:        { fontSize: 13, color: COLORS.primary, fontWeight: 600, minWidth: 45, textAlign: 'right' },
+  totalRow:       { display: 'flex', justifyContent: 'space-between', padding: '7px 0 9px', borderTop: '1px solid #eee' },
+  totalLabel:     { fontSize: 15, fontWeight: 600, color: '#1a1a1a' },
+  totalVal:       { fontSize: 20, fontWeight: 700, color: COLORS.primary },
+  payBtns:        { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 6 },
+  cashBtn:        { background: COLORS.teal, color: '#fff', border: 'none', padding: '13px', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' },
+  onlineBtn:      { background: COLORS.blue, color: '#fff', border: 'none', padding: '13px', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' },
+  zomatoPayBtn:   { width: '100%', background: ZOMATO_RED, color: '#fff', border: 'none', padding: '13px', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 6 },
+  clearBtn:       { width: '100%', background: '#f5f5f5', color: '#888', border: 'none', padding: '8px', borderRadius: 10, fontSize: 13, cursor: 'pointer', marginTop: 4 },
+  lastOrderSection:{ margin: '10px 12px 0' },
+  lastOrderBanner: { borderRadius: 10, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 8 },
+  actionBtns:     { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 },
+  billBtn:        { background: '#fff', border: '2px solid #D85A30', color: '#D85A30', padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  contactBtn:     { background: COLORS.tealLight, border: `2px solid ${COLORS.teal}`, color: COLORS.tealDark, padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  contactForm:    { background: '#fff', border: '1px solid #eee', borderRadius: 12, padding: 14 },
+  contactTitle:   { fontSize: 12, color: COLORS.tealDark, fontWeight: 600, marginBottom: 10 },
+  contactInput:   { width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #ddd', fontSize: 14, marginBottom: 8, boxSizing: 'border-box' },
+  saveContactBtn: { background: COLORS.teal, color: '#fff', border: 'none', padding: '11px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  skipBtn:        { background: '#f5f5f5', color: '#666', border: '1px solid #ddd', padding: '11px', borderRadius: 10, fontSize: 13, cursor: 'pointer' },
 }

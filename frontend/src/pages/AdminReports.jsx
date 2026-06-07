@@ -79,7 +79,7 @@ export default function AdminReports() {
         subtitle={t('व्यवसाय अहवाल', 'Business Reports')}
         rightContent={
           <a href="/admin" style={styles.backBtn}>
-            {t('अॅडमिन', 'Admin')}
+            {t('ऍडमिन', 'Admin')}
           </a>
         }
       />
