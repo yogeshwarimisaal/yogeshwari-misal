@@ -4,49 +4,41 @@ import { getTodayDate } from '../utils/formatters'
 import toast from 'react-hot-toast'
 
 export function useAdmin() {
-  const [todayStats, setTodayStats] = useState({
-    revenue: 0,
-    orders: 0,
-    cashOrders: 0,
-    onlineOrders: 0,
-    topDish: null,
+  const [todayStats,    setTodayStats]    = useState({
+    revenue: 0, orders: 0, cashOrders: 0, onlineOrders: 0,
+    zomatoOrders: 0, cashRevenue: 0, onlineRevenue: 0, zomatoRevenue: 0, topDish: null,
   })
-  const [expenses, setExpenses] = useState([])
+  const [expenses,      setExpenses]      = useState([])
   const [todayExpenses, setTodayExpenses] = useState(0)
-  const [inventory, setInventory] = useState([])
-  const [shifts, setShifts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [inventory,     setInventory]     = useState([])
+  const [shifts,        setShifts]        = useState([])
+  const [loading,       setLoading]       = useState(true)
 
-  useEffect(() => {
-    loadAll()
-  }, [])
+  useEffect(() => { loadAll() }, [])
 
   async function loadAll() {
     setLoading(true)
-    await Promise.all([
-      loadTodayStats(),
-      loadExpenses(),
-      loadInventory(),
-      loadTodayShifts(),
-    ])
+    await Promise.all([loadTodayStats(), loadExpenses(), loadInventory(), loadTodayShifts()])
     setLoading(false)
   }
 
   async function loadTodayStats() {
     const today = getTodayDate()
-
     const { data: orders } = await supabase
       .from('orders')
       .select(`*, order_items(*, menu_item:menu_items(*))`)
       .eq('status', 'completed')
       .gte('completed_at', `${today}T00:00:00`)
       .lte('completed_at', `${today}T23:59:59`)
-
     if (!orders) return
 
-    const revenue = orders.reduce((s, o) => s + (o.total_amount || 0), 0)
-    const cashOrders = orders.filter(o => o.payment_mode === 'cash').length
+    const revenue      = orders.reduce((s,o) => s+(o.total_amount||0), 0)
+    const cashOrders   = orders.filter(o => o.payment_mode === 'cash').length
     const onlineOrders = orders.filter(o => o.payment_mode === 'online').length
+    const zomatoOrders = orders.filter(o => o.payment_mode === 'zomato').length
+    const cashRevenue  = orders.filter(o => o.payment_mode === 'cash').reduce((s,o) => s+(o.total_amount||0),0)
+    const onlineRevenue= orders.filter(o => o.payment_mode === 'online').reduce((s,o) => s+(o.total_amount||0),0)
+    const zomatoRevenue= orders.filter(o => o.payment_mode === 'zomato').reduce((s,o) => s+(o.total_amount||0),0)
 
     const dishCount = {}
     orders.forEach(order => {
@@ -55,20 +47,14 @@ export function useAdmin() {
         dishCount[name] = (dishCount[name] || 0) + oi.quantity
       })
     })
-    const topDish = Object.entries(dishCount).sort((a, b) => b[1] - a[1])[0]
+    const topDish = Object.entries(dishCount).sort((a,b) => b[1]-a[1])[0]
 
-    const cashRevenue   = orders.filter(o => o.payment_mode === 'cash').reduce((s,o) => s + (o.total_amount||0), 0)
-    const onlineRevenue = orders.filter(o => o.payment_mode === 'online').reduce((s,o) => s + (o.total_amount||0), 0)
-
-setTodayStats({
-  revenue,
-  orders: orders.length,
-  cashOrders,
-  onlineOrders,
-  cashRevenue,
-  onlineRevenue,
-  topDish: topDish ? { name: topDish[0], count: topDish[1] } : null,
-})
+    setTodayStats({
+      revenue, orders: orders.length,
+      cashOrders, onlineOrders, zomatoOrders,
+      cashRevenue, onlineRevenue, zomatoRevenue,
+      topDish: topDish ? { name: topDish[0], count: topDish[1] } : null,
+    })
   }
 
   async function loadExpenses() {
@@ -76,23 +62,18 @@ setTodayStats({
     const { data } = await supabase
       .from('expenses')
       .select('*')
+      .order('expense_date', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(20)
-
+      .limit(50)
     if (data) {
       setExpenses(data)
-      const todayTotal = data
-        .filter(e => e.expense_date === today)
-        .reduce((s, e) => s + (e.amount || 0), 0)
+      const todayTotal = data.filter(e => e.expense_date === today).reduce((s,e) => s+(e.amount||0),0)
       setTodayExpenses(todayTotal)
     }
   }
 
   async function loadInventory() {
-    const { data } = await supabase
-      .from('inventory')
-      .select('*')
-      .order('item_name')
+    const { data } = await supabase.from('inventory').select('*').order('item_name')
     if (data) setInventory(data)
   }
 
@@ -114,9 +95,24 @@ setTodayStats({
     return true
   }
 
+  async function updateExpense(id, updates) {
+    const { error } = await supabase.from('expenses').update(updates).eq('id', id)
+    if (error) { toast.error('Update failed'); return false }
+    toast.success('Expense updated!')
+    loadExpenses()
+    return true
+  }
+
+  async function deleteExpense(id) {
+    const { error } = await supabase.from('expenses').delete().eq('id', id)
+    if (error) { toast.error('Delete failed'); return false }
+    toast.success('Expense deleted!')
+    loadExpenses()
+    return true
+  }
+
   async function updateInventoryItem(id, updates) {
-    const { error } = await supabase
-      .from('inventory').update(updates).eq('id', id)
+    const { error } = await supabase.from('inventory').update(updates).eq('id', id)
     if (error) { toast.error('Update failed'); return false }
     toast.success('Stock updated!')
     loadInventory()
@@ -131,10 +127,33 @@ setTodayStats({
     return true
   }
 
+  async function exportAllData() {
+    const tables = ['orders','expenses','inventory','shifts','bulk_orders','menu_items','cash_balance']
+    for (const table of tables) {
+      const { data } = await supabase.from(table).select('*')
+      if (!data || data.length === 0) continue
+      const csv = [
+        Object.keys(data[0]).join(','),
+        ...data.map(row => Object.values(row).map(v =>
+          typeof v === 'string' ? `"${v.replace(/"/g,'""')}"` : v
+        ).join(','))
+      ].join('\n')
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `${table}_${new Date().toISOString().split('T')[0]}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      await new Promise(r => setTimeout(r, 300))
+    }
+  }
+
   return {
     todayStats, expenses, todayExpenses,
     inventory, shifts, loading,
-    addExpense, updateInventoryItem,
-    addInventoryItem, reload: loadAll,
+    addExpense, updateExpense, deleteExpense,
+    updateInventoryItem, addInventoryItem,
+    exportAllData, reload: loadAll,
   }
 }

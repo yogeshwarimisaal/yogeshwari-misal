@@ -93,12 +93,12 @@ function AdminPanel({ activeTab, setActiveTab }) {
             )}
 
             {activeTab === 'expenses' && (
-              <ExpensesTab
-                expenses={expenses}
-                onAdd={addExpense}
-                lang={lang}
-                t={t}
-              />
+              <ExpensesTab 
+                expenses={expenses} 
+                onAdd={addExpense} 
+                onUpdate={updateExpense} 
+                onDelete={deleteExpense} 
+                lang={lang} t={t} />
             )}
 
             {activeTab === 'inventory' && (
@@ -225,98 +225,111 @@ function DashboardTab({ stats, todayExpenses, t }) {
   )
 }
 
-function ExpensesTab({ expenses, onAdd, lang, t }) {
+function ExpensesTab({ expenses, onAdd, onUpdate, onDelete, lang, t }) {
   const [form, setForm] = useState({
-    category: 'raw_material',
-    amount: '',
-    description: '',
+    category: 'raw_material', amount: '', description: '',
     expense_date: getTodayDate(),
   })
-  const [saving, setSaving] = useState(false)
+  const [saving,     setSaving]     = useState(false)
+  const [editingId,  setEditingId]  = useState(null)
+  const [editForm,   setEditForm]   = useState(null)
+  const [savingEdit, setSavingEdit] = useState(false)
 
   async function handleSubmit() {
     if (!form.amount) return
     setSaving(true)
     await onAdd({ ...form, amount: parseInt(form.amount) })
-    setForm({
-      category: 'raw_material',
-      amount: '',
-      description: '',
-      expense_date: getTodayDate(),
-    })
+    setForm({ category: 'raw_material', amount: '', description: '', expense_date: getTodayDate() })
     setSaving(false)
+  }
+
+  function startEdit(exp) {
+    setEditingId(exp.id)
+    setEditForm({ category: exp.category, amount: exp.amount, description: exp.description || '', expense_date: exp.expense_date })
+  }
+
+  async function handleSaveEdit() {
+    if (!editForm?.amount) return
+    setSavingEdit(true)
+    await onUpdate(editingId, { ...editForm, amount: parseInt(editForm.amount) })
+    setEditingId(null)
+    setEditForm(null)
+    setSavingEdit(false)
+  }
+
+  async function handleDelete(id, amount) {
+    if (!window.confirm(t(`Rs.${amount} चा खर्च डिलीट करायचा?`, `Delete expense of Rs.${amount}?`))) return
+    await onDelete(id)
   }
 
   return (
     <div>
-      <div style={styles.sectionTitle}>
-        {t('नवा खर्च जोडा', 'Add Expense')}
-      </div>
+      <div style={styles.sectionTitle}>{t('नवा खर्च जोडा','Add Expense')}</div>
       <div style={styles.formCard}>
-        <select
-          value={form.category}
-          onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-          style={styles.input}
-        >
+        <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={styles.input}>
           {EXPENSE_CATEGORIES.map(cat => (
-            <option key={cat} value={cat}>
-              {EXPENSE_LABELS[lang]?.[cat] || EXPENSE_LABELS.en[cat]}
-            </option>
+            <option key={cat} value={cat}>{EXPENSE_LABELS[lang]?.[cat] || EXPENSE_LABELS.en[cat]}</option>
           ))}
         </select>
-        <input
-          type="number"
-          placeholder={t('रक्कम (Rs.)', 'Amount (Rs.)')}
-          value={form.amount}
-          onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-          style={styles.input}
-        />
-        <input
-          type="text"
-          placeholder={t('वर्णन (ऐच्छिक)', 'Description (optional)')}
-          value={form.description}
-          onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-          style={styles.input}
-        />
-        <input
-          type="date"
-          value={form.expense_date}
-          onChange={e => setForm(f => ({ ...f, expense_date: e.target.value }))}
-          style={styles.input}
-        />
-        <button
-          onClick={handleSubmit}
-          disabled={saving || !form.amount}
-          style={styles.submitBtn}
-        >
-          {saving
-            ? t('सेव्ह होत आहे...', 'Saving...')
-            : t('खर्च जोडा', 'Add Expense')}
+        <input type="number" placeholder={t('रक्कम (Rs.) *','Amount (Rs.) *')} value={form.amount}
+          onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} style={styles.input} />
+        <input type="text" placeholder={t('वर्णन (ऐच्छिक)','Description (optional)')} value={form.description}
+          onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={styles.input} />
+        <input type="date" value={form.expense_date}
+          onChange={e => setForm(f => ({ ...f, expense_date: e.target.value }))} style={styles.input} />
+        <button onClick={handleSubmit} disabled={saving || !form.amount} style={styles.submitBtn}>
+          {saving ? t('सेव्ह...','Saving...') : t('खर्च जोडा','Add Expense')}
         </button>
       </div>
 
-      <div style={styles.sectionTitle}>
-        {t('अलीकडील खर्च', 'Recent Expenses')}
-      </div>
+      <div style={styles.sectionTitle}>{t('अलीकडील खर्च','Recent Expenses')}</div>
       {expenses.length === 0 ? (
-        <div style={styles.empty}>
-          {t('कोणताही खर्च नाही', 'No expenses yet')}
-        </div>
+        <div style={styles.empty}>{t('कोणताही खर्च नाही','No expenses yet')}</div>
       ) : (
         expenses.map(exp => (
-          <div key={exp.id} style={styles.expenseRow}>
-            <div style={{ flex: 1 }}>
-              <div style={styles.expenseCat}>
-                {EXPENSE_LABELS[lang]?.[exp.category] || exp.category}
+          <div key={exp.id}>
+            {editingId === exp.id ? (
+              <div style={{ ...styles.formCard, borderColor: COLORS.gold, marginBottom: 8 }}>
+                <select value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))} style={styles.input}>
+                  {EXPENSE_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{EXPENSE_LABELS[lang]?.[cat] || EXPENSE_LABELS.en[cat]}</option>
+                  ))}
+                </select>
+                <input type="number" value={editForm.amount}
+                  onChange={e => setEditForm(f => ({ ...f, amount: e.target.value }))} style={styles.input} />
+                <input type="text" placeholder={t('वर्णन','Description')} value={editForm.description}
+                  onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} style={styles.input} />
+                <input type="date" value={editForm.expense_date}
+                  onChange={e => setEditForm(f => ({ ...f, expense_date: e.target.value }))} style={styles.input} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={handleSaveEdit} disabled={savingEdit} style={{ ...styles.submitBtn, flex: 1 }}>
+                    {savingEdit ? t('सेव्ह...','Saving...') : t('अपडेट करा','Update')}
+                  </button>
+                  <button onClick={() => { setEditingId(null); setEditForm(null) }}
+                    style={{ ...styles.smallBtnGray, flex: 1, padding: 10 }}>
+                    {t('रद्द','Cancel')}
+                  </button>
+                </div>
               </div>
-              {exp.description && (
-                <div style={styles.expenseDesc}>{exp.description}</div>
-              )}
-              <div style={styles.expenseDate}>{exp.expense_date}</div>
-            </div>
-            <div style={styles.expenseAmount}>
-              {formatCurrency(exp.amount)}
-            </div>
+            ) : (
+              <div style={{ ...styles.expenseRow, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={styles.expenseCat}>{EXPENSE_LABELS[lang]?.[exp.category] || exp.category}</div>
+                  {exp.description && <div style={styles.expenseDesc}>{exp.description}</div>}
+                  <div style={styles.expenseDate}>{exp.expense_date}</div>
+                </div>
+                <div style={styles.expenseAmount}>{formatCurrency(exp.amount)}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginLeft: 8 }}>
+                  <button onClick={() => startEdit(exp)} style={{ ...styles.smallBtn, fontSize: 11, padding: '4px 10px' }}>
+                    {t('बदल','Edit')}
+                  </button>
+                  <button onClick={() => handleDelete(exp.id, exp.amount)}
+                    style={{ background: '#FCEBEB', color: '#791F1F', border: 'none', padding: '4px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                    {t('डिलीट','Delete')}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))
       )}
