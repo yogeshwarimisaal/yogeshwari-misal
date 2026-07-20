@@ -93,12 +93,14 @@ function AdminPanel({ activeTab, setActiveTab }) {
             )}
 
             {activeTab === 'expenses' && (
-              <ExpensesTab 
-                expenses={expenses} 
-                onAdd={addExpense} 
-                onUpdate={updateExpense} 
-                onDelete={deleteExpense} 
-                lang={lang} t={t} />
+              <ExpensesTab
+                expenses={expenses}
+                onAdd={addExpense}
+                onUpdate={updateExpense}
+                onDelete={deleteExpense}
+                lang={lang}
+                t={t}
+                  />
             )}
 
             {activeTab === 'inventory' && (
